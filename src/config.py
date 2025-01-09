@@ -24,7 +24,6 @@ def load_config() -> Dict[str, str]:
             existing_vars[key] = os.environ[key]
             del os.environ[key]
 
-    # Now load .env file
     load_dotenv(override=True)
 
     # Create config dictionary with added models
