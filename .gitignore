@@ -67,6 +67,13 @@ coverage.xml
 # Poetry
 poetry.lock
 
+# Frontend
+static/*
+!static/.gitkeep
+src/frontend/node_modules/
+src/frontend/.env
+package-lock.json
+
 # Modal
 .modal.toml
 

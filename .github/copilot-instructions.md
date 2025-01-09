@@ -1,0 +1,1 @@
+- We use Poetry to manage our dependencies. When you suggest anything related to dependencies, please use Poetry instead of other options.
