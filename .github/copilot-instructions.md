@@ -1,1 +1,3 @@
-- We use Poetry to manage our dependencies. When you suggest anything related to dependencies, please use Poetry instead of other options.
+- We use Poetry to manage our dependencies. Do not suggest using pip or other dependency managers; always use Poetry.
+- Prefer simple and maintainable solutions. This is an MVP focused on solving core problems efficiently.
+- Always use `src/logger.py` (import get_logger and initialize it) instead of Python's standard logger.

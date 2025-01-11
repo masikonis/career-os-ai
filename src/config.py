@@ -2,14 +2,20 @@ import os
 from typing import Dict
 
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
-# Add model configurations
-LLM_MODELS = {
-    "basic": "gpt-4o-mini",
-    "advanced": "gpt-4o",
-    "reasoning": "o1-preview",
-    "embeddings": "text-embedding-3-small",
-}
+from src.llms.providers import ProviderType
+from src.logger import get_logger
+
+logger = get_logger(__name__)
+
+
+class LLMSettings(BaseModel):
+    provider: ProviderType = ProviderType.OPENAI
+    basic_model: str = "gpt-4o-mini"
+    advanced_model: str = "gpt-4o"
+    reasoning_model: str = "o1-preview"
+    embedding_model: str = "text-embedding-3-small"
 
 
 def load_config() -> Dict[str, str]:
@@ -28,10 +34,12 @@ def load_config() -> Dict[str, str]:
 
     # Create config dictionary with added models
     config = {
-        "LLM_MODELS": LLM_MODELS,
         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
         "LANGCHAIN_API_KEY": os.getenv("LANGCHAIN_API_KEY"),
     }
+
+    # Load LLM settings
+    config["llm"] = LLMSettings()
 
     # Restore original env vars if needed
     for key, value in existing_vars.items():
