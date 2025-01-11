@@ -2,14 +2,25 @@ import os
 from typing import Dict
 
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
-# Add model configurations
+from src.llm.providers import ProviderType
+
+# LLM model configurations
 LLM_MODELS = {
     "basic": "gpt-4o-mini",
     "advanced": "gpt-4o",
     "reasoning": "o1-preview",
     "embeddings": "text-embedding-3-small",
 }
+
+
+# LLM settings
+class LLMSettings(BaseModel):
+    provider: ProviderType = ProviderType.OPENAI
+    default_model: str = LLM_MODELS["advanced"]
+    embedding_model: str = LLM_MODELS["embeddings"]
+    temperature: float = 0.7
 
 
 def load_config() -> Dict[str, str]:
@@ -32,6 +43,9 @@ def load_config() -> Dict[str, str]:
         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
         "LANGCHAIN_API_KEY": os.getenv("LANGCHAIN_API_KEY"),
     }
+
+    # Add LLM settings
+    config["llm"] = LLMSettings()
 
     # Restore original env vars if needed
     for key, value in existing_vars.items():

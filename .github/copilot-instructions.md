@@ -1,1 +1,2 @@
 - We use Poetry to manage our dependencies. When you suggest anything related to dependencies, please use Poetry instead of other options.
+- Prefer simple, straightforward solutions over complex architectures. This is an MVP focused on solving core problems efficiently, not a large-scale enterprise application. When multiple approaches are possible, suggest the most maintainable and straightforward one.
