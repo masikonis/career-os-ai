@@ -6,21 +6,23 @@ from pydantic import BaseModel
 
 from src.llm.providers import ProviderType
 
-# LLM model configurations
+# LLM models settings
 LLM_MODELS = {
-    "basic": "gpt-4o-mini",
-    "advanced": "gpt-4o",
-    "reasoning": "o1-preview",
-    "embeddings": "text-embedding-3-small",
+    "openai": {
+        "basic": "gpt-4o-mini",
+        "advanced": "gpt-4o",
+        "reasoning": "o1-preview",
+        "embeddings": "text-embedding-3-small",
+    }
 }
 
 
-# LLM settings
 class LLMSettings(BaseModel):
     provider: ProviderType = ProviderType.OPENAI
-    default_model: str = LLM_MODELS["advanced"]
-    embedding_model: str = LLM_MODELS["embeddings"]
-    temperature: float = 0.7
+    basic_model: str = LLM_MODELS["openai"]["basic"]
+    advanced_model: str = LLM_MODELS["openai"]["advanced"]
+    reasoning_model: str = LLM_MODELS["openai"]["reasoning"]
+    embedding_model: str = LLM_MODELS["openai"]["embeddings"]
 
 
 def load_config() -> Dict[str, str]:

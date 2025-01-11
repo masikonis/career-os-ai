@@ -8,11 +8,25 @@ class LLMProvider(ABC):
     """Base interface for LLM providers using LangChain."""
 
     @abstractmethod
-    def get_chat_model(self) -> BaseChatModel:
-        """Returns configured chat model."""
+    def create_chat_model(
+        self, model_type: str = "basic", temperature: float = None
+    ) -> BaseChatModel:
+        """Creates and returns a configured chat model instance."""
         pass
 
     @abstractmethod
-    def get_embeddings(self) -> Embeddings:
-        """Returns configured embeddings model."""
+    def create_embedding_model(self) -> Embeddings:
+        """Creates and returns a configured embedding model instance."""
+        pass
+
+    @abstractmethod
+    def generate_response(
+        self, messages: list, model_type: str = "basic", temperature: float = None
+    ) -> str:
+        """Generates a response using the chat model."""
+        pass
+
+    @abstractmethod
+    def generate_embeddings(self, text: str) -> list:
+        """Generates embeddings for the given text."""
         pass
