@@ -1,7 +1,7 @@
 from src.config import config
-from src.llm.interface import LLMProvider
-from src.llm.providers import ProviderType
-from src.llm.providers.openai import OpenAIProvider
+from src.llms.interface import LLMProvider
+from src.llms.providers import ProviderType
+from src.llms.providers.openai import OpenAIProvider
 
 
 def create_provider(provider_type: ProviderType, config=config) -> LLMProvider:

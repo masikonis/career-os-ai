@@ -4,7 +4,7 @@ from typing import Dict
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from src.llm.providers import ProviderType
+from src.llms.providers import ProviderType
 
 # LLM models settings
 LLM_MODELS = {

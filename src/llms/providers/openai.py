@@ -2,7 +2,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 from src.config import config
-from src.llm.interface import LLMProvider
+from src.llms.interface import LLMProvider
 from src.logger import get_logger
 
 logger = get_logger(__name__)

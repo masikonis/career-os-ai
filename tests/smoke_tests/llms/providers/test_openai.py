@@ -1,8 +1,8 @@
 import pytest
 from langchain.schema import HumanMessage, SystemMessage
 
-from src.llm.factory import create_provider
-from src.llm.providers import ProviderType
+from src.llms.factory import create_provider
+from src.llms.providers import ProviderType
 from src.logger import get_logger
 
 logger = get_logger(__name__)
