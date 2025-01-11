@@ -18,9 +18,7 @@ class OpenAIProvider(LLMProvider):
         model_name = getattr(
             self.config["llm"], f"{model_type}_model", self.config["llm"].basic_model
         )
-        temperature = (
-            temperature if temperature is not None else 0.7
-        )  # Set a default temperature
+        temperature = temperature if temperature is not None else 0.7
         try:
             return ChatOpenAI(
                 model_name=model_name,
