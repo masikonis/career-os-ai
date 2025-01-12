@@ -48,6 +48,25 @@ class OpenAIProvider(LLMProvider):
             logger.error(f"Failed to generate response: {e}")
             raise
 
+    def generate_structured_response(
+        self,
+        messages: list,
+        schema: dict,
+        model_type: str = "basic",
+        temperature: float = None,
+    ) -> dict:
+        """Generates a structured response using the chat model."""
+        chat_model = self.create_chat_model(
+            model_type=model_type, temperature=temperature
+        )
+        model_with_structure = chat_model.with_structured_output(schema)
+        try:
+            structured_output = model_with_structure.invoke(messages)
+            return structured_output
+        except Exception as e:
+            logger.error(f"Error generating structured response: {e}")
+            raise
+
     def generate_embeddings(self, text: str) -> list:
         embedding_model = self.create_embedding_model()
         try:

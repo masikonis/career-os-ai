@@ -27,6 +27,17 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
+    def generate_structured_response(
+        self,
+        messages: list,
+        schema: dict,
+        model_type: str = "basic",
+        temperature: float = None,
+    ) -> dict:
+        """Generates a structured response using the chat model."""
+        pass
+
+    @abstractmethod
     def generate_embeddings(self, text: str) -> list:
         """Generates embeddings for the given text."""
         pass
