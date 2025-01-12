@@ -1,17 +1,18 @@
 import pytest
 from langchain.schema import HumanMessage, SystemMessage
 
-from src.llms.factory import create_provider
-from src.llms.providers import ProviderType
 from src.logger import get_logger
 from src.schemas.company import Company
+from src.services.llm.factory import LLMFactory
+from src.services.llm.interface import LLMInterface
+from src.services.llm.providers import ProviderType
 
 logger = get_logger(__name__)
 
 
 @pytest.mark.smoke
 def test_openai_provider_smoke():
-    provider = create_provider(ProviderType.OPENAI)
+    provider: LLMInterface = LLMFactory.get_provider(ProviderType.OPENAI)
 
     messages = [
         SystemMessage(content="You are a helpful assistant."),
@@ -26,7 +27,7 @@ def test_openai_provider_smoke():
         assert response is not None, "Chat response is None."
         assert len(response) > 0, "Chat response is empty."
         logger.info("Chat model response generated successfully.")
-    except Exception as e:
+    except Exception:
         logger.error("Failed to generate chat model response.", exc_info=True)
         raise
 
@@ -44,7 +45,7 @@ def test_openai_provider_smoke():
         assert structured_response.website, "Company 'website' is empty."
 
         logger.info("Company structured response generated successfully.")
-    except Exception as e:
+    except Exception:
         logger.error("Failed to generate company structured response.", exc_info=True)
         raise
 
@@ -55,6 +56,6 @@ def test_openai_provider_smoke():
         assert embeddings is not None, "Embeddings are None."
         assert len(embeddings) > 0, "Embeddings are empty."
         logger.info("Embeddings generated successfully.")
-    except Exception as e:
+    except Exception:
         logger.error("Failed to generate embeddings.", exc_info=True)
         raise

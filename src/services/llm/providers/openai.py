@@ -5,13 +5,13 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from pydantic import BaseModel
 
 from src.config import config
-from src.llms.interface import LLMProvider
 from src.logger import get_logger
+from src.services.llm.interface import LLMInterface
 
 logger = get_logger(__name__)
 
 
-class OpenAIProvider(LLMProvider):
+class OpenAIProvider(LLMInterface):
     def __init__(self, config):
         self.config = config
         self.chat_models = {}

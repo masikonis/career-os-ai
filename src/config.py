@@ -4,8 +4,8 @@ from typing import Dict
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from src.llms.providers import ProviderType
 from src.logger import get_logger
+from src.services.llm.providers import ProviderType
 
 logger = get_logger(__name__)
 

@@ -6,7 +6,7 @@ from langchain.embeddings.base import Embeddings
 from pydantic import BaseModel
 
 
-class LLMProvider(ABC):
+class LLMInterface(ABC):
     """Base interface for LLM providers using LangChain."""
 
     @abstractmethod

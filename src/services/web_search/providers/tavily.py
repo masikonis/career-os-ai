@@ -7,7 +7,7 @@ from src.services.web_search.interface import WebSearchInterface
 logger = get_logger(__name__)
 
 
-class Tavily(WebSearchInterface):
+class TavilyProvider(WebSearchInterface):
     def __init__(self):
         self.client = TavilyClient(api_key=config["TAVILY_API_KEY"])
         logger.info("Tavily provider initialized")
