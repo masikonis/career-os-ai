@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Type
 
 from langchain.chat_models.base import BaseChatModel
 from langchain.embeddings.base import Embeddings
+from pydantic import BaseModel
 
 
 class LLMProvider(ABC):
@@ -30,10 +32,10 @@ class LLMProvider(ABC):
     def generate_structured_response(
         self,
         messages: list,
-        schema: dict,
+        schema: Type[BaseModel],
         model_type: str = "basic",
         temperature: float = None,
-    ) -> dict:
+    ) -> BaseModel:
         """Generates a structured response using the chat model."""
         pass
 
