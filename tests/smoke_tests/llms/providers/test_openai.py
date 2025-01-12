@@ -4,7 +4,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from src.llms.factory import create_provider
 from src.llms.providers import ProviderType
 from src.logger import get_logger
-from src.schemas.basic_response import BasicResponse
+from src.schemas.company import Company
 
 logger = get_logger(__name__)
 
@@ -27,37 +27,34 @@ def test_openai_provider_smoke():
         assert len(response) > 0, "Chat response is empty."
         logger.info("Chat model response generated successfully.")
     except Exception as e:
-        logger.error(f"Failed to generate chat model response: {e}")
+        logger.error("Failed to generate chat model response.", exc_info=True)
         raise
 
-    # Structured response test
+    # Company structured response test
     try:
         structured_response = provider.generate_structured_response(
-            messages, BasicResponse, model_type="basic", temperature=0.5
+            messages, Company, model_type="basic", temperature=0.5
         )
 
         assert isinstance(
-            structured_response, BasicResponse
-        ), "Structured response is not an instance of BasicResponse."
+            structured_response, Company
+        ), "Structured response is not an instance of Company."
 
-        assert structured_response.response, "Structured response 'response' is empty."
-        assert (
-            structured_response.follow_up_question
-        ), "Structured response 'follow_up_question' is empty."
+        assert structured_response.name, "Company 'name' is empty."
+        assert structured_response.website, "Company 'website' is empty."
 
-        logger.info("Structured response generated successfully.")
+        logger.info("Company structured response generated successfully.")
     except Exception as e:
-        logger.error(f"Failed to generate structured response: {e}")
+        logger.error("Failed to generate company structured response.", exc_info=True)
         raise
 
     # Embedding test
     try:
         text = "This is a sample text for embedding."
         embeddings = provider.generate_embeddings(text)
-        logger.debug(f"Embeddings: {embeddings[:100]}")
         assert embeddings is not None, "Embeddings are None."
         assert len(embeddings) > 0, "Embeddings are empty."
         logger.info("Embeddings generated successfully.")
     except Exception as e:
-        logger.error(f"Failed to generate embeddings: {e}")
+        logger.error("Failed to generate embeddings.", exc_info=True)
         raise
