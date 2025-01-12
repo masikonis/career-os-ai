@@ -22,10 +22,7 @@ def load_config() -> Dict[str, str]:
     """Load configuration, prioritizing .env file over environment variables"""
     # First, store any existing env vars we want to override
     existing_vars = {}
-    for key in [
-        "OPENAI_API_KEY",
-        "LANGCHAIN_API_KEY",
-    ]:
+    for key in ["OPENAI_API_KEY", "LANGCHAIN_API_KEY", "TAVILY_API_KEY"]:
         if key in os.environ:
             existing_vars[key] = os.environ[key]
             del os.environ[key]
@@ -36,6 +33,7 @@ def load_config() -> Dict[str, str]:
     config = {
         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
         "LANGCHAIN_API_KEY": os.getenv("LANGCHAIN_API_KEY"),
+        "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
     }
 
     # Load LLM settings
