@@ -2,7 +2,7 @@ import pytest
 from langchain.schema import HumanMessage, SystemMessage
 
 from src.logger import get_logger
-from src.schemas.company import Company
+from src.models.company.company import Company
 from src.services.llm.factory import LLMFactory
 from src.services.llm.interface import LLMInterface
 from src.services.llm.providers import ProviderType
@@ -41,8 +41,8 @@ def test_openai_provider_smoke():
             structured_response, Company
         ), "Structured response is not an instance of Company."
 
-        assert structured_response.name, "Company 'name' is empty."
-        assert structured_response.website, "Company 'website' is empty."
+        assert structured_response.info.company_name, "Company 'company_name' is empty."
+        assert structured_response.info.website_url, "Company 'website_url' is empty."
 
         logger.info("Company structured response generated successfully.")
     except Exception:
