@@ -1,0 +1,35 @@
+import pytest
+
+from src.agents.company_research.company_web_researcher import CompanyWebResearcher
+from src.logger import get_logger
+from src.models.company.company_info import CompanyInfo
+
+logger = get_logger(__name__)
+
+
+@pytest.mark.smoke
+def test_company_web_researcher_smoke():
+    """
+    Smoke test for CompanyWebResearcher.
+    Ensures that the researcher can process a basic company info and return a summary.
+    """
+    researcher = CompanyWebResearcher()
+
+    # Sample company information
+    company_info = CompanyInfo(
+        company_name="Generation Genius",
+        website_url="https://www.generationgenius.com/",
+    )
+
+    try:
+        summary = researcher.research_company(company_info)
+
+        assert summary is not None, "Researcher returned None."
+        assert isinstance(summary, str), "Summary should be a string."
+        assert len(summary.strip()) > 0, "Summary should not be empty."
+
+        logger.info("CompanyWebResearcher smoke test passed.")
+
+    except Exception as e:
+        logger.error(f"CompanyWebResearcher smoke test failed: {e}")
+        raise
