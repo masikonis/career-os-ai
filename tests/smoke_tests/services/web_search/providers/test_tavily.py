@@ -1,5 +1,6 @@
 import pytest
 
+from src.cache import CacheManager
 from src.logger import get_logger
 from src.services.web_search.factory import WebSearchFactory
 
@@ -8,6 +9,8 @@ logger = get_logger(__name__)
 
 @pytest.mark.smoke
 def test_tavily_provider_smoke():
+    cache = CacheManager()
+    cache.clear()
     provider = WebSearchFactory.get_provider()
     query = "Generation Genius"
 

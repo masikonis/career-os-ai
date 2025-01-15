@@ -78,4 +78,4 @@ package-lock.json
 .modal.toml
 
 # Cache
-cache_directory/
+.app_cache/
