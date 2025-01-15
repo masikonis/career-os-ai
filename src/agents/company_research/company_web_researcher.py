@@ -214,6 +214,8 @@ class CompanyWebResearcher:
     def summarize_text(self, company_name: str, text: str) -> str:
         """Summarize the given text using the language model."""
         try:
+            logger.debug(f"Summarizing text excerpt: {text[:100]}")
+
             prompt = f"Provide a summary of the following information about {company_name}.\n\n{text}"
             messages = [
                 SystemMessage(
@@ -234,9 +236,12 @@ class CompanyWebResearcher:
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"Critically evaluate the following summaries and synthesize a single-paragraph description of {company_name}, "
-                "no more than 250 words. Present an overall portrayal that captures the company’s focus, offerings, and "
-                "key attributes in a concise, balanced manner.\n\n"
+                f"Review all relevant details from the following summaries about {company_name}. "
+                "Then, synthesize a single-paragraph description covering these key points: up to 50% on a general overview "
+                "(who they are and what they offer), and the remaining 50% on funding information, team details, and customer "
+                "sentiment (including reviews and testimonials). Present a concise, balanced, and objective portrayal of the "
+                "company’s focus, offerings, and attributes, ensuring no area is overlooked. Keep your language clear, factual, "
+                "and cohesive to highlight the core aspects of the business.\n\n"
                 f"{combined_text}"
             )
             messages = [
