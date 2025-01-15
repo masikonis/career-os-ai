@@ -17,8 +17,8 @@ def test_company_web_researcher_smoke():
 
     # Sample company information
     company_info = CompanyInfo(
-        company_name="Generation Genius",
-        website_url="https://www.generationgenius.com/",
+        company_name="Single Grain",
+        website_url="https://www.singlegrain.com/",
     )
 
     try:

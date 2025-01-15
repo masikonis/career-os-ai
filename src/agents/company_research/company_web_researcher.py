@@ -22,7 +22,7 @@ class CompanyWebResearcher:
         temperature: float = 0.0,
         num_urls: int = 3,
         max_retries: int = 2,
-        concurrency: int = 3,
+        concurrency: int = 5,
     ):
         self.llm = LLMFactory.get_provider()
         self.web_search = WebSearchFactory.get_provider()
@@ -31,7 +31,9 @@ class CompanyWebResearcher:
         self.num_urls = num_urls
         self.max_retries = max_retries
         self.concurrency = concurrency
-        logger.info("CompanyWebResearcher initialized with LLM and WebSearch providers")
+        logger.info(
+            "CompanyWebResearcher initialized with LLM, and WebSearch providers"
+        )
 
     def research_company(self, company_info: CompanyInfo) -> str:
         """Research the company by performing multiple targeted searches and consolidate the information."""
@@ -44,15 +46,17 @@ class CompanyWebResearcher:
             home_page_doc = self.scrape_urls_concurrently([website_url])
             home_page_summary = ""
             if home_page_doc:
+                # We only requested one URL, so grab the single returned doc (if any)
                 home_page_doc = home_page_doc[0]
+                # Extract relevant info and summarize
                 relevant_text = self.extract_relevant_info(
                     company_name, home_page_doc.page_content
                 )
-
                 home_page_summary = self.summarize_text(company_name, relevant_text)
 
             # Step 2: Search for Company Name
-            company_search_results = self.web_search.search(company_name)[
+            company_query = f"{company_name} company"
+            company_search_results = self.web_search.search(company_query)[
                 : self.num_urls
             ]
             company_related_urls = [
@@ -110,31 +114,22 @@ class CompanyWebResearcher:
                 )
                 return ""
 
-            # Summarize each document
-            summaries = []
-            for doc in documents:
-                try:
-                    relevant_text = self.extract_relevant_info(
-                        company_name, doc.page_content
-                    )
-                    summary = self.summarize_text(company_name, relevant_text)
-                    summaries.append(summary)
-                except Exception as e:
-                    logger.error(
-                        f"Error summarizing document from {doc.metadata.get('source')}: {str(e)}"
-                    )
+            # Summarize each scraped document concurrently
+            doc_summaries = self.summarize_documents_concurrently(
+                documents, company_name
+            )
 
             # Include home page summary if available
             if home_page_summary:
-                summaries.append(home_page_summary)
+                doc_summaries.append(home_page_summary)
 
             # Consolidate all summaries into a final comprehensive summary
-            final_summary = self.create_final_summary(company_name, summaries)
+            final_summary = self.create_final_summary(company_name, doc_summaries)
             logger.info("Completed research and summarization.")
             logger.debug(final_summary)
 
             # Return both the final summary and all individual summaries
-            return {"final_summary": final_summary, "combined_summaries": summaries}
+            return {"final_summary": final_summary, "combined_summaries": doc_summaries}
 
         except Exception as e:
             logger.error(f"Error in research_company: {str(e)}")
@@ -179,8 +174,42 @@ class CompanyWebResearcher:
         logger.error(f"Exceeded maximum retries for URL: {url}")
         return None
 
+    def summarize_documents_concurrently(
+        self, documents: list, company_name: str
+    ) -> list:
+        """
+        Summarize multiple documents in parallel. Extract relevant info for each
+        document, then produce a concise summary.
+        """
+        summaries = []
+        with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
+            future_to_doc = {
+                executor.submit(self.process_document, doc, company_name): doc
+                for doc in documents
+            }
+            for future in as_completed(future_to_doc):
+                doc = future_to_doc[future]
+                try:
+                    summary = future.result()
+                    if summary:
+                        summaries.append(summary)
+                except Exception as e:
+                    logger.error(
+                        f"Error summarizing document from {doc.metadata.get('source')}: {str(e)}"
+                    )
+        return summaries
+
+    def process_document(self, doc, company_name: str) -> str:
+        """
+        Extract relevant info from the document and then summarize that info.
+        """
+        relevant_text = self.extract_relevant_info(company_name, doc.page_content)
+        return self.summarize_text(company_name, relevant_text)
+
     def extract_relevant_info(self, company_name: str, text: str) -> str:
-        """Extract relevant information about the company from the scraped text."""
+        """
+        Extract relevant information about the company from the scraped text.
+        """
         try:
             prompt = (
                 f"Extract relevant information about {company_name} and provide a summary of no more than 500 words.\n\n"
@@ -188,7 +217,9 @@ class CompanyWebResearcher:
             )
             messages = [
                 SystemMessage(
-                    content=f"You are a helpful assistant that extracts comprehensive content about {company_name}."
+                    content=(
+                        f"You are a helpful assistant that extracts comprehensive content about a company named {company_name}."
+                    )
                 ),
                 HumanMessage(content=prompt),
             ]
@@ -212,14 +243,21 @@ class CompanyWebResearcher:
         return valid_urls
 
     def summarize_text(self, company_name: str, text: str) -> str:
-        """Summarize the given text using the language model."""
+        """
+        Summarize the given text using the language model.
+        """
         try:
             logger.debug(f"Summarizing text excerpt: {text[:100]}")
 
-            prompt = f"Provide a summary of the following information about {company_name}.\n\n{text}"
+            prompt = (
+                f"Provide a summary of the following information about a company named {company_name}.\n\n{text}"
+                f"{text}"
+            )
             messages = [
                 SystemMessage(
-                    content=f"You are a helpful assistant that summarizes content about {company_name}."
+                    content=(
+                        f"You are a helpful assistant that summarizes content about a company named {company_name}."
+                    )
                 ),
                 HumanMessage(content=prompt),
             ]
@@ -232,21 +270,26 @@ class CompanyWebResearcher:
             raise
 
     def create_final_summary(self, company_name: str, summaries: list) -> str:
-        """Create a concise, single-paragraph summary (no more than 250 words) from all individual summaries."""
+        """
+        Create a concise, single-paragraph summary (no more than 250 words) from all individual summaries.
+        """
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"Review all relevant details from the following summaries about {company_name}. "
-                "Then, synthesize a single-paragraph description covering these key points: up to 50% on a general overview "
-                "(who they are and what they offer), and the remaining 50% on funding information, team details, and customer "
-                "sentiment (including reviews and testimonials). Present a concise, balanced, and objective portrayal of the "
-                "company’s focus, offerings, and attributes, ensuring no area is overlooked. Keep your language clear, factual, "
-                "and cohesive to highlight the core aspects of the business.\n\n"
+                f"Review all relevant details from the following summaries about a company named '{company_name}'. "
+                "If there are mentions of multiple entities with the same name, focus on whichever references "
+                "are most clearly about the actual company. Then, synthesize a single-paragraph description covering key points: "
+                "up to 50% on a general overview (who they are and what they offer), and the remaining 50% on funding information, "
+                "team details, and customer sentiment. Keep your language clear, factual, and cohesive, ensuring other "
+                "unrelated entities with the same name do not confuse the final summary.\n\n"
                 f"{combined_text}"
             )
             messages = [
                 SystemMessage(
-                    content="You are an expert in synthesizing information to create concise company overviews."
+                    content=(
+                        "You are an expert at synthesizing information about a specific company. "
+                        "You will create a concise overview that stays focused on the correct company."
+                    )
                 ),
                 HumanMessage(content=prompt),
             ]
