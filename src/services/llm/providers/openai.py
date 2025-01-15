@@ -31,9 +31,6 @@ class OpenAIProvider(LLMInterface):
                     model_name=model_name,
                     temperature=temperature,
                 )
-                logger.info(
-                    f"Created chat model: {model_name} with temperature {temperature}"
-                )
             except Exception as e:
                 logger.error(f"Failed to create chat model: {e}")
                 raise
@@ -45,7 +42,6 @@ class OpenAIProvider(LLMInterface):
                 self.embedding_model = OpenAIEmbeddings(
                     model=self.config["llm"].embedding_model
                 )
-                logger.info("Created embedding model.")
             except Exception as e:
                 logger.error(f"Failed to create embedding model: {e}")
                 raise
@@ -59,7 +55,6 @@ class OpenAIProvider(LLMInterface):
         )
         try:
             response = chat_model.invoke(messages)
-            logger.debug(f"Generated response: {response.content}")
             return response.content
         except Exception as e:
             logger.error(f"Failed to generate response: {e}")
@@ -79,7 +74,6 @@ class OpenAIProvider(LLMInterface):
         model_with_structure = chat_model.with_structured_output(schema)
         try:
             structured_output = model_with_structure.invoke(messages)
-            logger.debug(f"Generated structured response: {structured_output}")
             return schema.model_validate(structured_output)
         except Exception as e:
             logger.error(f"Error generating structured response: {e}")
@@ -89,7 +83,6 @@ class OpenAIProvider(LLMInterface):
         embedding_model = self.create_embedding_model()
         try:
             embeddings = embedding_model.embed_query(text)
-            logger.debug(f"Generated embeddings for text: {text}")
             return embeddings
         except Exception as e:
             logger.error(f"Failed to generate embeddings: {e}")

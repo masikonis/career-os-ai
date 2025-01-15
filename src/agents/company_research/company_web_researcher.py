@@ -20,9 +20,9 @@ class CompanyWebResearcher:
         self,
         model_type: str = "basic",
         temperature: float = 0.0,
-        num_urls: int = 5,  # Limited to 5 URLs per search query
-        max_retries: int = 3,
-        concurrency: int = 5,
+        num_urls: int = 3,
+        max_retries: int = 2,
+        concurrency: int = 3,
     ):
         self.llm = LLMFactory.get_provider()
         self.web_search = WebSearchFactory.get_provider()
@@ -37,19 +37,21 @@ class CompanyWebResearcher:
         """Research the company by performing multiple targeted searches and consolidate the information."""
         try:
             company_name = company_info.company_name
-            website_url = str(company_info.website_url)  # Convert HttpUrl to string
+            website_url = str(company_info.website_url)
             logger.info(f"Starting research for company: {company_name}")
 
             # Step 1: Scrape the Home Page
-            home_page_doc = self.scrape_home_page(website_url)
+            home_page_doc = self.scrape_urls_concurrently([website_url])
             home_page_summary = ""
             if home_page_doc:
+                home_page_doc = home_page_doc[0]
                 relevant_text = self.extract_relevant_info(
                     company_name, home_page_doc.page_content
                 )
+
                 home_page_summary = self.summarize_text(company_name, relevant_text)
 
-            # Step 2: Search for Company Name and Scrape Top 5 Results
+            # Step 2: Search for Company Name
             company_search_results = self.web_search.search(company_name)[
                 : self.num_urls
             ]
@@ -73,7 +75,7 @@ class CompanyWebResearcher:
                 result["url"] for result in team_search_results if "url" in result
             ]
 
-            # Step 5: Search for Sentiment Analysis (Reviews, Testimonials)
+            # Step 5: Search for Sentiment Analysis
             sentiment_query = f"{company_name} reviews"
             sentiment_search_results = self.web_search.search(sentiment_query)[
                 : self.num_urls
@@ -89,10 +91,6 @@ class CompanyWebResearcher:
                 + team_related_urls
                 + sentiment_related_urls
             )
-
-            # Optionally include the home page if not already included
-            if website_url not in all_related_urls:
-                all_related_urls.append(website_url)
 
             # Deduplicate URLs
             unique_urls = list(set(all_related_urls))
@@ -133,59 +131,13 @@ class CompanyWebResearcher:
             # Consolidate all summaries into a final comprehensive summary
             final_summary = self.create_final_summary(company_name, summaries)
             logger.info("Completed research and summarization.")
+            logger.debug(final_summary)
 
             return final_summary
 
         except Exception as e:
             logger.error(f"Error in research_company: {str(e)}")
             raise
-
-    def scrape_home_page(self, url: str):
-        """Scrape the company's home page."""
-        try:
-            logger.info(f"Scraping home page: {url}")
-            document = self.scrape_with_retries(url)
-            return document
-        except Exception as e:
-            logger.error(f"Error scraping home page {url}: {str(e)}")
-            return None
-
-    def create_final_summary(self, company_name: str, summaries: list) -> str:
-        """Create a comprehensive final summary from all individual summaries."""
-        try:
-            combined_text = "\n".join(summaries)
-            prompt = (
-                f"Based on the following information, provide a comprehensive and detailed description of {company_name}. "
-                "The description should cover the essence of the company, what they do, their products/services, "
-                "market position, funding, team, and overall sentiment based on reviews and testimonials. "
-                "This should be helpful to someone evaluating early-stage startups for potential investment or employment opportunities.\n\n"
-                f"{combined_text}"
-            )
-            messages = [
-                SystemMessage(
-                    content=f"You are an expert in generating detailed company profiles."
-                ),
-                HumanMessage(content=prompt),
-            ]
-            final_summary = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
-            )
-            logger.debug("Generated comprehensive final summary.")
-            return final_summary
-        except Exception as e:
-            logger.error(f"Error creating final summary: {str(e)}")
-            raise
-
-    def validate_urls(self, urls: list) -> list:
-        """Validate the list of URLs to ensure they are properly formatted."""
-        valid_urls = []
-        for url in urls:
-            parsed = urlparse(url)
-            if all([parsed.scheme, parsed.netloc]):
-                valid_urls.append(url)
-            else:
-                logger.warning(f"Invalid URL skipped: {url}")
-        return valid_urls
 
     def scrape_urls_concurrently(self, urls: list) -> list:
         """Scrape multiple URLs concurrently with retry mechanisms."""
@@ -210,7 +162,11 @@ class CompanyWebResearcher:
         attempt = 0
         while attempt < self.max_retries:
             try:
-                loader = WebBaseLoader(web_paths=[url])
+                loader = WebBaseLoader(
+                    web_paths=[url],
+                    requests_kwargs={"timeout": 10},
+                    continue_on_failure=True,
+                )
                 document = next(loader.lazy_load())
                 return document
             except Exception as e:
@@ -226,8 +182,7 @@ class CompanyWebResearcher:
         """Extract relevant information about the company from the scraped text."""
         try:
             prompt = (
-                f"Extract detailed information about {company_name}, including what the company does, its products/services, "
-                "market position, funding, team, and sentiment based on reviews and testimonials.\n\n"
+                f"Extract relevant information about {company_name} and provide a summary of no more than 500 words.\n\n"
                 + text
             )
             messages = [
@@ -243,6 +198,17 @@ class CompanyWebResearcher:
         except Exception as e:
             logger.error(f"Error extracting relevant information: {str(e)}")
             raise
+
+    def validate_urls(self, urls: list) -> list:
+        """Validate the list of URLs to ensure they are properly formatted."""
+        valid_urls = []
+        for url in urls:
+            parsed = urlparse(url)
+            if all([parsed.scheme, parsed.netloc]):
+                valid_urls.append(url)
+            else:
+                logger.warning(f"Invalid URL skipped: {url}")
+        return valid_urls
 
     def summarize_text(self, company_name: str, text: str) -> str:
         """Summarize the given text using the language model."""
@@ -260,4 +226,29 @@ class CompanyWebResearcher:
             return summary
         except Exception as e:
             logger.error(f"Error summarizing text: {str(e)}")
+            raise
+
+    def create_final_summary(self, company_name: str, summaries: list) -> str:
+        """Create a concise, single-paragraph summary (no more than 250 words) from all individual summaries."""
+        try:
+            combined_text = "\n".join(summaries)
+            prompt = (
+                f"Critically evaluate the following summaries and synthesize a single-paragraph description of {company_name}, "
+                "no more than 250 words. Present an overall portrayal that captures the company’s focus, offerings, and "
+                "key attributes in a concise, balanced manner.\n\n"
+                f"{combined_text}"
+            )
+            messages = [
+                SystemMessage(
+                    content="You are an expert in synthesizing information to create concise company overviews."
+                ),
+                HumanMessage(content=prompt),
+            ]
+            final_summary = self.llm.generate_response(
+                messages, model_type=self.model_type, temperature=self.temperature
+            )
+            logger.debug("Generated concise final summary.")
+            return final_summary
+        except Exception as e:
+            logger.error(f"Error creating final summary: {str(e)}")
             raise
