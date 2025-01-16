@@ -46,9 +46,7 @@ class CompanyWebResearcher:
             home_page_doc = self.scrape_urls_concurrently([website_url])
             home_page_summary = ""
             if home_page_doc:
-                # We only requested one URL, so grab the single returned doc (if any)
                 home_page_doc = home_page_doc[0]
-                # Extract relevant info and summarize
                 relevant_text = self.extract_relevant_info(
                     company_name, home_page_doc.page_content
                 )
@@ -123,14 +121,18 @@ class CompanyWebResearcher:
             if home_page_summary:
                 doc_summaries.append(home_page_summary)
 
-            # Consolidate all summaries into a final comprehensive summary
-            final_summary = self.create_final_summary(company_name, doc_summaries)
+            # Consolidate all summaries into a comprehensive summary
+            comprehensive_summary = self.create_comprehensive_summary(
+                company_name, doc_summaries
+            )
             logger.info("Completed research and summarization.")
-            logger.debug(final_summary)
+            logger.debug(comprehensive_summary)
 
-            # Return both the final summary and all individual summaries
-            return {"final_summary": final_summary, "combined_summaries": doc_summaries}
-
+            # Return both the comprehensive summary and all individual summaries
+            return {
+                "comprehensive_summary": comprehensive_summary,
+                "combined_summaries": doc_summaries,
+            }
         except Exception as e:
             logger.error(f"Error in research_company: {str(e)}")
             raise
@@ -269,7 +271,7 @@ class CompanyWebResearcher:
             logger.error(f"Error summarizing text: {str(e)}")
             raise
 
-    def create_final_summary(self, company_name: str, summaries: list) -> str:
+    def create_comprehensive_summary(self, company_name: str, summaries: list) -> str:
         """
         Create a concise, single-paragraph summary (no more than 250 words) from all individual summaries.
         """
@@ -293,11 +295,11 @@ class CompanyWebResearcher:
                 ),
                 HumanMessage(content=prompt),
             ]
-            final_summary = self.llm.generate_response(
+            comprehensive_summary = self.llm.generate_response(
                 messages, model_type=self.model_type, temperature=self.temperature
             )
-            logger.debug("Generated concise final summary.")
-            return final_summary
+            logger.debug("Generated concise comprehensive summary.")
+            return comprehensive_summary
         except Exception as e:
-            logger.error(f"Error creating final summary: {str(e)}")
+            logger.error(f"Error creating comprehensive summary: {str(e)}")
             raise
