@@ -26,20 +26,22 @@ def test_company_web_researcher_smoke():
 
         assert result is not None, "Researcher returned None."
         assert isinstance(result, dict), "Result should be a dictionary."
-        assert "final_summary" in result, "Result should contain 'final_summary'."
+        assert (
+            "comprehensive_summary" in result
+        ), "Result should contain 'comprehensive_summary'."
         assert (
             "combined_summaries" in result
         ), "Result should contain 'combined_summaries'."
 
         assert isinstance(
-            result["final_summary"], str
-        ), "'final_summary' should be a string."
+            result["comprehensive_summary"], str
+        ), "'comprehensive_summary' should be a string."
         assert isinstance(
             result["combined_summaries"], list
         ), "'combined_summaries' should be a list."
         assert (
-            len(result["final_summary"].strip()) > 0
-        ), "'final_summary' should not be empty."
+            len(result["comprehensive_summary"].strip()) > 0
+        ), "'comprehensive_summary' should not be empty."
         assert (
             len(result["combined_summaries"]) > 0
         ), "'combined_summaries' should not be empty."
