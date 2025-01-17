@@ -17,8 +17,8 @@ def test_company_web_researcher_smoke():
 
     # Sample company information
     company_info = CompanyInfo(
-        company_name="Single Grain",
-        website_url="https://www.singlegrain.com/",
+        company_name="Generation Genius",
+        website_url="https://www.generationgenius.com/",
     )
 
     try:
@@ -29,22 +29,20 @@ def test_company_web_researcher_smoke():
         assert (
             "comprehensive_summary" in result
         ), "Result should contain 'comprehensive_summary'."
-        assert (
-            "combined_summaries" in result
-        ), "Result should contain 'combined_summaries'."
+        assert "source_summaries" in result, "Result should contain 'source_summaries'."
 
         assert isinstance(
             result["comprehensive_summary"], str
         ), "'comprehensive_summary' should be a string."
         assert isinstance(
-            result["combined_summaries"], list
-        ), "'combined_summaries' should be a list."
+            result["source_summaries"], list
+        ), "'source_summaries' should be a list."
         assert (
             len(result["comprehensive_summary"].strip()) > 0
         ), "'comprehensive_summary' should not be empty."
         assert (
-            len(result["combined_summaries"]) > 0
-        ), "'combined_summaries' should not be empty."
+            len(result["source_summaries"]) > 0
+        ), "'source_summaries' should not be empty."
 
         logger.info("CompanyWebResearcher smoke test passed.")
 

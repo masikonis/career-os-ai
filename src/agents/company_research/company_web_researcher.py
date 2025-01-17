@@ -131,7 +131,7 @@ class CompanyWebResearcher:
             # Return both the comprehensive summary and all individual summaries
             return {
                 "comprehensive_summary": comprehensive_summary,
-                "combined_summaries": doc_summaries,
+                "source_summaries": doc_summaries,
             }
         except Exception as e:
             logger.error(f"Error in research_company: {str(e)}")
@@ -249,7 +249,7 @@ class CompanyWebResearcher:
         Summarize the given text using the language model.
         """
         try:
-            logger.debug(f"Summarizing text excerpt: {text[:100]}")
+            logger.debug(f"Summarizing text excerpt")
 
             prompt = (
                 f"Provide a summary of the following information about a company named {company_name}.\n\n{text}"
