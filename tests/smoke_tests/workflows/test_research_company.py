@@ -1,4 +1,4 @@
-from src.flows.research_company import CompanyResearchFlow
+from src.workflows.research_company import CompanyResearchFlow
 
 
 def test_research_company_flow():

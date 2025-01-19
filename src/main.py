@@ -3,9 +3,9 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.config import load_config
-from src.flows.research_company import CompanyResearchFlow
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.workflows.research_company import CompanyResearchFlow
 
 app = FastAPI()
 logger = get_logger(__name__)
