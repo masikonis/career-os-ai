@@ -8,12 +8,11 @@ class ExtractorInterface(ABC):
     @abstractmethod
     def extract_details(self, job_ad_url: str) -> Dict[str, str]:
         """
-        Extract company name and website URL from the given job ad URL.
+        Extract company name, website URL, job ad title, and job ad from the given job ad URL.
 
         Args:
             job_ad_url (str): The URL of the job advertisement.
 
         Returns:
-            Dict[str, str]: A dictionary with keys 'company_name' and 'website_url'.
+            Dict[str, str]: A dictionary with keys 'company_name', 'website_url', 'job_ad_title', and 'job_ad'.
         """
-        pass
