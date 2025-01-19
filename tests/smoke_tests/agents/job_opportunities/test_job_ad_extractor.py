@@ -1,16 +1,14 @@
-import pytest
-
-from src.agents.job_opportunities.job_ad_ingestor import JobAdIngestor
+from src.agents.job_opportunities.job_ad_extractor import JobAdExtractor
 from src.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-def test_ingest_content_valid_url():
-    """Smoke test for JobAdIngestor.ingest_content with a valid URL."""
-    ingestor = JobAdIngestor()
+def test_extract_details_valid_url():
+    """Smoke test for JobAdExtractor.extract_details with a valid URL."""
+    extractor = JobAdExtractor()
     sample_url = "https://weworkremotely.com/remote-jobs/bluegamma-full-stack-developer"
-    content = ingestor.ingest_content(sample_url)
+    content = extractor.extract_details(sample_url)
     assert isinstance(content, dict), "Content should be a dictionary."
     assert "company_name" in content, "Content should include 'company_name'."
     assert "website_url" in content, "Content should include 'website_url'."
