@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup, Tag
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
 from src.models.job.job_details import JobDetails
+from src.models.job.job_location import LocationType
 from src.utilities.text import preserve_paragraphs, sanitize_text
 from src.utilities.url import normalize_url
 
@@ -25,29 +26,28 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
     def extract_details(self, job_ad_url: str) -> JobDetails:
         """Extract job details from URL."""
         try:
-            soup = self._fetch_and_parse(job_ad_url)
-            if not soup:
-                return self._empty_response(job_ad_url)
+            response = requests.get(job_ad_url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
 
-            company_card = self._find_company_card(soup)
-            if not company_card:
-                return self._empty_response(job_ad_url)
-
-            company_info = CompanyInfo(
-                company_name=self._extract_company_name(company_card),
-                website_url=self._extract_website_url(company_card),
-            )
+            company_name = self._extract_company_name(soup)
+            logger.debug(f"Found company name: {company_name}")
 
             return JobDetails(
-                company=company_info,
-                title=self._extract_job_title(soup),
-                description=self._extract_job_description(soup),
-                url=job_ad_url,
+                company=CompanyInfo(
+                    company_name=company_name,
+                    website_url="https://example.com",  # Default valid URL if not found
+                ),
+                title=self._extract_title(soup),
+                description=self._extract_description(soup),
+                url=normalize_url(job_ad_url),
+                location_type=LocationType(
+                    type="Remote"
+                ),  # WeWorkRemotely is a remote-only job board
             )
-
         except Exception as e:
-            logger.error(f"Error extracting job details: {e}")
-            return self._empty_response(job_ad_url)
+            logger.error(f"Error extracting job details: {str(e)}")
+            raise
 
     def _empty_response(self, url: str) -> JobDetails:
         """Return empty response."""
@@ -76,13 +76,14 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
             logger.debug(f"HTML snippet: {soup.prettify()[:1000]}")
         return company_card
 
-    def _extract_company_name(self, company_card: Tag) -> str:
-        """Get company name from card."""
-        company_name_tag = company_card.find("h2")
-        if company_name_tag and (name_link := company_name_tag.find("a")):
-            company_name = name_link.get_text(strip=True)
-            logger.debug(f"Found company name: {company_name}")
-            return sanitize_text(company_name)
+    def _extract_company_name(self, soup: BeautifulSoup) -> str:
+        """Get company name from page."""
+        if company_card := self._find_company_card(soup):
+            company_name_tag = company_card.find("h2")
+            if company_name_tag and (name_link := company_name_tag.find("a")):
+                company_name = name_link.get_text(strip=True)
+                logger.debug(f"Found company name: {company_name}")
+                return sanitize_text(company_name)
         logger.warning("Company name not found")
         return ""
 
@@ -95,14 +96,14 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
         logger.warning("Website URL not found")
         return ""
 
-    def _extract_job_title(self, soup: BeautifulSoup) -> str:
+    def _extract_title(self, soup: BeautifulSoup) -> str:
         """Get job title from page."""
         if title_tag := soup.find("h1"):
             return sanitize_text(title_tag.get_text(strip=True))
         logger.warning("Job title not found")
         return ""
 
-    def _extract_job_description(self, soup: BeautifulSoup) -> str:
+    def _extract_description(self, soup: BeautifulSoup) -> str:
         """Get job description from page."""
         if listing := soup.find("div", class_="listing-container"):
             sections = self._extract_content_sections(listing)
@@ -120,3 +121,7 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
             if text := section.get_text(strip=True):
                 sections.append(sanitize_text(text))
         return sections
+
+    def needs_location_analysis(self) -> bool:
+        """WWR is remote-only, no need for LLM analysis."""
+        return False

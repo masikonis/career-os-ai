@@ -1,6 +1,7 @@
 from pydantic import BaseModel, HttpUrl
 
 from src.models.company.company_info import CompanyInfo
+from src.models.job.job_location import LocationType
 
 
 class JobDetails(BaseModel):
@@ -10,3 +11,4 @@ class JobDetails(BaseModel):
     title: str
     description: str
     url: HttpUrl
+    location_type: LocationType

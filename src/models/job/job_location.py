@@ -1,0 +1,22 @@
+from typing import Literal
+
+from pydantic import BaseModel
+
+
+class LocationType(BaseModel):
+    """Type of work location.
+
+    Attributes:
+        type: One of:
+            - Remote: Fully remote position
+            - Hybrid: Mix of remote and onsite work
+            - Onsite: Fully onsite position
+    """
+
+    type: Literal["Remote", "Hybrid", "Onsite"]
+
+
+class LocationTypeResponse(BaseModel):
+    """Pydantic model for LLM location type response."""
+
+    location_type: LocationType

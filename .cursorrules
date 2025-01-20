@@ -1,0 +1,2 @@
+* We use Poetry to manage our dependencies. Do not suggest using pip or other dependency managers; always use Poetry.
+* When you need to add logging functionality to your code, use src/logger.py (import get_logger and initialize it) instead of Python's standard logger.

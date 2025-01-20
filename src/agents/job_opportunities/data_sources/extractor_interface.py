@@ -24,3 +24,11 @@ class ExtractorInterface(ABC):
             JobDetails object
         """
         raise NotImplementedError
+
+    def needs_location_analysis(self) -> bool:
+        """Indicate if this extractor needs LLM location analysis.
+
+        Returns:
+            bool: True if LLM should analyze location type, False if extractor knows the type
+        """
+        return True  # Default to True for backward compatibility
