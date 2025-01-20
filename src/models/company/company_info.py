@@ -9,3 +9,4 @@ class CompanyInfo(BaseModel):
     company_name: str
     website_url: Optional[HttpUrl] = None
     growth_stage: Optional[CompanyGrowthStage] = None
+    founding_year: Optional[int] = None

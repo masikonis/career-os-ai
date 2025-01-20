@@ -1,7 +1,10 @@
+from typing import Optional
+
 from langchain_core.messages import HumanMessage
 
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.models.company.founding_year import FoundingYear
 from src.models.company.growth_stage import CompanyGrowthStage
 from src.services.llm.factory import LLMFactory
 
@@ -95,4 +98,33 @@ class CompanyInfoExtractor:
 
         except Exception as e:
             logger.error(f"Error extracting growth stage: {str(e)}")
+            raise
+
+    def extract_founding_year(self, research_output: dict) -> Optional[int]:
+        """Extract company founding year from research output"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+
+            messages = [
+                HumanMessage(
+                    content=f"""Extract the founding year from the following company description. 
+                    Return the year as a number. If no founding year is mentioned, return null.
+                    
+                    Text: {comprehensive_summary}
+                    """
+                )
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                FoundingYear,
+                model_type=self.model_type,
+                temperature=self.temperature,
+            )
+
+            logger.info(f"Extracted founding year: {response.year}")
+            return response.year
+
+        except Exception as e:
+            logger.error(f"Error extracting founding year: {str(e)}")
             raise

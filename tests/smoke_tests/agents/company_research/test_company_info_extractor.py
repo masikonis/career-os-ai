@@ -77,3 +77,30 @@ def test_extract_growth_stage_smoke():
     except Exception as e:
         logger.error(f"Growth stage extraction test failed: {e}")
         raise
+
+
+@pytest.mark.smoke
+def test_extract_founding_year_smoke():
+    """Test the extraction of company founding year from research output."""
+    extractor = CompanyInfoExtractor()
+
+    # Sample research output
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California...
+    """
+
+    try:
+        result = extractor.extract_founding_year(
+            {"comprehensive_summary": comprehensive_summary}
+        )
+
+        assert result is not None, "Founding year extraction returned None"
+        assert isinstance(result, int), "Result should be an integer"
+        assert 1800 <= result <= 2024, "Founding year should be within reasonable range"
+
+        logger.info(f"Extracted founding year: {result}")
+        assert result == 2017, "Expected founding year is 2017"
+
+    except Exception as e:
+        logger.error(f"Founding year extraction test failed: {e}")
+        raise
