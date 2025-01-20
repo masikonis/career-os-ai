@@ -1,9 +1,13 @@
 from typing import Dict
 from urllib.parse import urlparse
 
-from src.logger import get_logger
+from pydantic import HttpUrl
 
-from .data_sources.extractor_interface import ExtractorInterface, JobDetailsDict
+from src.logger import get_logger
+from src.models.company.company_info import CompanyInfo
+from src.models.job.job_details import JobDetails
+
+from .data_sources.extractor_interface import ExtractorInterface
 from .data_sources.weworkremotely_extractor import WeWorkRemotelyExtractor
 
 logger = get_logger(__name__)
@@ -18,7 +22,7 @@ class JobAdExtractor:
         }
         logger.info("JobAdExtractor initialized")
 
-    def extract_details(self, job_ad_url: str) -> JobDetailsDict:
+    def extract_details(self, job_ad_url: str) -> JobDetails:
         """Extract job details from URL."""
         if not job_ad_url:
             logger.error("Empty URL provided")
@@ -47,6 +51,11 @@ class JobAdExtractor:
         return urlparse(url).netloc.lower()
 
     @staticmethod
-    def _empty_response() -> JobDetailsDict:
+    def _empty_response() -> JobDetails:
         """Return empty response."""
-        return {"company_name": "", "website_url": "", "job_ad_title": "", "job_ad": ""}
+        return JobDetails(
+            company=CompanyInfo(company_name="", website_url=""),
+            title="",
+            description="",
+            url="",
+        )

@@ -1,14 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, TypedDict
 
-
-class JobDetailsDict(TypedDict):
-    """Job details dictionary structure."""
-
-    company_name: str
-    website_url: str
-    job_ad_title: str
-    job_ad: str
+from src.models.job.job_details import JobDetails
 
 
 class ExtractorInterface(ABC):
@@ -22,13 +14,13 @@ class ExtractorInterface(ABC):
     """
 
     @abstractmethod
-    def extract_details(self, job_ad_url: str) -> JobDetailsDict:
+    def extract_details(self, job_ad_url: str) -> JobDetails:
         """Extract job details from URL.
 
         Args:
             job_ad_url: Job advertisement URL
 
         Returns:
-            Dict with company_name, website_url, job_ad_title, and job_ad
+            JobDetails object
         """
         raise NotImplementedError
