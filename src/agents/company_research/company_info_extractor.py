@@ -193,8 +193,7 @@ class CompanyInfoExtractor:
                     - MVP: Has a minimum viable product
                     - SEED: Has product with some traction
                     - EARLY: Growing revenue and customer base
-                    - SERIES_A: Significant traction, seeking scale
-                    - LATER: Well-established, multiple funding rounds
+                    - LATER: Series A or beyond
                     
                     Provide:
                     1. The most appropriate growth stage

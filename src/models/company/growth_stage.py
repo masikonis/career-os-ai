@@ -9,7 +9,6 @@ class GrowthStage(str, Enum):
     MVP = "MVP"
     SEED = "SEED"
     EARLY = "EARLY"
-    SERIES_A = "SERIES_A"
     LATER = "LATER"
 
 
