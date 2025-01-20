@@ -128,11 +128,7 @@ class CompanyWebResearcher:
             logger.info("Completed research and summarization.")
             logger.debug(comprehensive_summary)
 
-            # Return both the comprehensive summary and all individual summaries
-            return {
-                "comprehensive_summary": comprehensive_summary,
-                "source_summaries": doc_summaries,
-            }
+            return comprehensive_summary
         except Exception as e:
             logger.error(f"Error in research_company: {str(e)}")
             raise

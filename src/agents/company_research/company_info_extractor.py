@@ -2,6 +2,7 @@ from langchain_core.messages import HumanMessage
 
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.models.company.growth_stage import CompanyGrowthStage
 from src.services.llm.factory import LLMFactory
 
 logger = get_logger(__name__)
@@ -41,4 +42,57 @@ class CompanyInfoExtractor:
             return response.model_dump()
         except Exception as e:
             logger.error(f"Error extracting company info: {str(e)}")
+            raise
+
+    def extract_growth_stage(self, research_output: dict) -> CompanyGrowthStage:
+        """Extract company growth stage from research output"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+            source_summaries = research_output.get("source_summaries", [])
+
+            # Combine all available information
+            combined_text = f"""
+            Comprehensive Summary: {comprehensive_summary}
+            
+            Detailed Sources:
+            {' '.join(source_summaries)}
+            """
+
+            messages = [
+                HumanMessage(
+                    content=f"""Based on the following company research, determine the company's growth stage.
+                    
+                    {combined_text}
+                    
+                    Classify the growth stage into one of these categories:
+                    - IDEA: Just an idea, no real product yet
+                    - PRE_SEED: Early development, pre-product
+                    - MVP: Has a minimum viable product
+                    - SEED: Has product with some traction
+                    - EARLY: Growing revenue and customer base
+                    - SERIES_A: Significant traction, seeking scale
+                    - LATER: Well-established, multiple funding rounds
+                    
+                    Provide:
+                    1. The most appropriate growth stage
+                    2. Your confidence level (0.0 to 1.0)
+                    3. Brief reasoning for your classification
+                    """
+                )
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                CompanyGrowthStage,
+                model_type=self.model_type,
+                temperature=self.temperature,
+            )
+
+            logger.info(
+                f"Extracted growth stage: {response.growth_stage} with confidence {response.confidence}"
+            )
+            return response
+
+        except Exception as e:
+            logger.error(f"Error extracting growth stage: {str(e)}")
             raise

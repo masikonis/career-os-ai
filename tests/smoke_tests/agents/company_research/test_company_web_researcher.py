@@ -25,24 +25,8 @@ def test_company_web_researcher_smoke():
         result = researcher.research_company(company_info)
 
         assert result is not None, "Researcher returned None."
-        assert isinstance(result, dict), "Result should be a dictionary."
-        assert (
-            "comprehensive_summary" in result
-        ), "Result should contain 'comprehensive_summary'."
-        assert "source_summaries" in result, "Result should contain 'source_summaries'."
-
-        assert isinstance(
-            result["comprehensive_summary"], str
-        ), "'comprehensive_summary' should be a string."
-        assert isinstance(
-            result["source_summaries"], list
-        ), "'source_summaries' should be a list."
-        assert (
-            len(result["comprehensive_summary"].strip()) > 0
-        ), "'comprehensive_summary' should not be empty."
-        assert (
-            len(result["source_summaries"]) > 0
-        ), "'source_summaries' should not be empty."
+        assert isinstance(result, str), "Result should be a string."
+        assert len(result.strip()) > 0, "Result should not be empty."
 
         logger.info("CompanyWebResearcher smoke test passed.")
 
