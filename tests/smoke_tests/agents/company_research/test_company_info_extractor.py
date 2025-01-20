@@ -295,7 +295,7 @@ def test_extract_industry_smoke():
 
 
 @pytest.mark.smoke
-def test_create_short_description_smoke():
+def test_create_description_smoke():
     """Test the creation of professional company summary."""
     extractor = CompanyInfoExtractor()
 
@@ -304,7 +304,7 @@ def test_create_short_description_smoke():
     """
 
     try:
-        result = extractor.create_short_description(
+        result = extractor.create_description(
             {"comprehensive_summary": comprehensive_summary}
         )
 
