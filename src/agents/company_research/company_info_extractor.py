@@ -4,6 +4,7 @@ from langchain_core.messages import HumanMessage
 
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.models.company.founders import CompanyFounders
 from src.models.company.founding_year import FoundingYear
 from src.models.company.growth_stage import CompanyGrowthStage
 from src.services.llm.factory import LLMFactory
@@ -127,4 +128,38 @@ class CompanyInfoExtractor:
 
         except Exception as e:
             logger.error(f"Error extracting founding year: {str(e)}")
+            raise
+
+    def extract_founders(self, research_output: dict) -> Optional[CompanyFounders]:
+        """Extract company founders from research output"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+
+            messages = [
+                HumanMessage(
+                    content=f"""Extract the founders' information from the following company description.
+                    For each founder, provide their name and title/role if mentioned.
+                    If no founders are mentioned, return an empty list.
+                    
+                    Text: {comprehensive_summary}
+                    """
+                )
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                CompanyFounders,
+                model_type=self.model_type,
+                temperature=self.temperature,
+            )
+
+            if not response.founders:
+                logger.info("No founders found in the text")
+                return None
+
+            logger.info(f"Extracted {len(response.founders)} founders")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error extracting founders: {str(e)}")
             raise

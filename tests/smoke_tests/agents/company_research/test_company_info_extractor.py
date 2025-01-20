@@ -3,6 +3,7 @@ import pytest
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.models.company.founders import CompanyFounders, Founder
 from src.models.company.growth_stage import CompanyGrowthStage, GrowthStage
 
 logger = get_logger(__name__)
@@ -103,4 +104,52 @@ def test_extract_founding_year_smoke():
 
     except Exception as e:
         logger.error(f"Founding year extraction test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_extract_founders_smoke():
+    """Test the extraction of company founders from research output."""
+    extractor = CompanyInfoExtractor()
+
+    # Sample research output
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California...
+    """
+
+    try:
+        result = extractor.extract_founders(
+            {"comprehensive_summary": comprehensive_summary}
+        )
+
+        assert result is not None, "Founders extraction returned None"
+        assert isinstance(
+            result, CompanyFounders
+        ), "Result should be a CompanyFounders object"
+        assert len(result.founders) > 0, "Should have found at least one founder"
+
+        # Check specific founders
+        founder_names = {founder.name for founder in result.founders}
+        expected_names = {"Jeff Vinokur", "Eric Rollman"}
+        assert (
+            founder_names == expected_names
+        ), f"Expected founders {expected_names}, got {founder_names}"
+
+        # Check titles if available (case-insensitive comparison)
+        for founder in result.founders:
+            if founder.name == "Jeff Vinokur":
+                assert (
+                    founder.title.lower() == "scientist"
+                ), "Jeff Vinokur should be identified as a scientist"
+            elif founder.name == "Eric Rollman":
+                assert (
+                    founder.title.lower() == "tv executive"
+                ), "Eric Rollman should be identified as a TV executive"
+
+        # Update the logging to show more details
+        founders_info = [f"{f.name} ({f.title})" for f in result.founders]
+        logger.info(f"Extracted founders: {founders_info}")
+
+    except Exception as e:
+        logger.error(f"Founders extraction test failed: {e}")
         raise
