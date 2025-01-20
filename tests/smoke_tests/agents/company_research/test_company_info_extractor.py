@@ -4,7 +4,9 @@ from src.agents.company_research.company_info_extractor import CompanyInfoExtrac
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
 from src.models.company.founders import CompanyFounders, Founder
+from src.models.company.funding import FundingInfo
 from src.models.company.growth_stage import CompanyGrowthStage, GrowthStage
+from src.models.company.location import CompanyLocation
 
 logger = get_logger(__name__)
 
@@ -152,4 +154,96 @@ def test_extract_founders_smoke():
 
     except Exception as e:
         logger.error(f"Founders extraction test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_extract_location_smoke():
+    """Test the extraction of company location from research output."""
+    extractor = CompanyInfoExtractor()
+
+    # Sample research output
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California. The platform specializes in creating engaging and interactive video lessons...
+    """
+
+    try:
+        result = extractor.extract_location(
+            {"comprehensive_summary": comprehensive_summary}
+        )
+
+        assert result is not None, "Location extraction returned None"
+        assert isinstance(
+            result, CompanyLocation
+        ), "Result should be a CompanyLocation object"
+
+        # Check specific location details
+        assert result.city == "Los Angeles", "City should be Los Angeles"
+        assert result.state == "California", "State should be California"
+        assert result.country == "United States", "Country should be United States"
+
+        # Log the extracted location
+        logger.info(
+            f"Extracted location: {result.city}, {result.state}, {result.country}"
+        )
+
+    except Exception as e:
+        logger.error(f"Location extraction test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_extract_funding_smoke():
+    """Test the extraction of company funding information from research output."""
+    extractor = CompanyInfoExtractor()
+
+    # Sample research output
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California. The platform specializes in creating engaging and interactive video lessons in science and math for K-8 students, aiming to make these subjects enjoyable and accessible. With a library of animated and live-action videos, hands-on activities, and comprehensive lesson plans aligned with the Next Generation Science Standards (NGSS), Generation Genius serves approximately 30% of elementary schools in the U.S. The company has received notable recognition, including being named one of TIME's 100 Most Influential Companies in 2023 and ranking on the Inc. 5000 list of fastest-growing companies. Generation Genius has raised a total of $1.6 million in funding, including a $1 million grant from the Howard Hughes Medical Institute and $1.07 million through crowdfunding. The team, led by Vinokur, is committed to transforming science education, and customer feedback highlights the platform's effectiveness in enhancing student engagement and learning outcomes, despite some concerns regarding subscription costs and the need for parental involvement.
+    """
+
+    try:
+        result = extractor.extract_funding(
+            {"comprehensive_summary": comprehensive_summary}
+        )
+
+        assert result is not None, "Funding extraction returned None"
+        assert isinstance(result, FundingInfo), "Result should be a FundingInfo object"
+
+        # Check total funding
+        assert (
+            result.total_amount == 1.6
+        ), f"Total funding should be 1.6M, got {result.total_amount}M"
+        assert result.currency == "USD", "Currency should be USD"
+
+        # Check funding sources
+        assert len(result.funding_sources) == 2, "Should have found 2 funding sources"
+
+        # Create a map of sources to amounts for easier checking
+        funding_map = {
+            source.source: source.amount for source in result.funding_sources
+        }
+
+        assert "Howard Hughes Medical Institute" in funding_map, "Missing HHMI funding"
+        assert (
+            funding_map["Howard Hughes Medical Institute"] == 1.0
+        ), "HHMI amount should be 1.0M"
+
+        # Check crowdfunding
+        crowdfunding = next(
+            (s for s in result.funding_sources if s.type.lower() == "crowdfunding"),
+            None,
+        )
+        assert crowdfunding is not None, "Missing crowdfunding source"
+        assert crowdfunding.amount == 1.07, "Crowdfunding amount should be 1.07M"
+
+        # Log the details
+        logger.info(f"Total funding: ${result.total_amount}M {result.currency}")
+        for source in result.funding_sources:
+            logger.info(
+                f"Source: {source.source}, Amount: ${source.amount}M, Type: {source.type}"
+            )
+
+    except Exception as e:
+        logger.error(f"Funding extraction test failed: {e}")
         raise

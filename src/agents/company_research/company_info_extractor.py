@@ -6,7 +6,9 @@ from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
 from src.models.company.founders import CompanyFounders
 from src.models.company.founding_year import FoundingYear
+from src.models.company.funding import FundingInfo
 from src.models.company.growth_stage import CompanyGrowthStage
+from src.models.company.location import CompanyLocation
 from src.services.llm.factory import LLMFactory
 
 logger = get_logger(__name__)
@@ -162,4 +164,79 @@ class CompanyInfoExtractor:
 
         except Exception as e:
             logger.error(f"Error extracting founders: {str(e)}")
+            raise
+
+    def extract_location(self, research_output: dict) -> Optional[CompanyLocation]:
+        """Extract company location from research output"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+
+            messages = [
+                HumanMessage(
+                    content=f"""Extract the company's location information from the following text.
+                    Return the city, state, and country if mentioned. If a field is not mentioned,
+                    return null for that field. For US companies, if only city and state are mentioned,
+                    assume country is United States.
+                    
+                    Text: {comprehensive_summary}
+                    """
+                )
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                CompanyLocation,
+                model_type=self.model_type,
+                temperature=self.temperature,
+            )
+
+            if not (response.city or response.state or response.country):
+                logger.info("No location information found in the text")
+                return None
+
+            logger.info(
+                f"Extracted location: {response.city}, {response.state}, {response.country}"
+            )
+            return response
+
+        except Exception as e:
+            logger.error(f"Error extracting location: {str(e)}")
+            raise
+
+    def extract_funding(self, research_output: dict) -> Optional[FundingInfo]:
+        """Extract company funding information from research output"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+
+            messages = [
+                HumanMessage(
+                    content=f"""Extract funding information from the following text.
+                    Include total funding amount (in millions), and list each funding source with its amount and type.
+                    For amounts, convert to millions (e.g., $1,000,000 = 1.0).
+                    If an amount is not specified for a source, return null for that amount.
+                    
+                    Text: {comprehensive_summary}
+                    """
+                )
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                FundingInfo,
+                model_type=self.model_type,
+                temperature=self.temperature,
+            )
+
+            if not response.funding_sources and not response.total_amount:
+                logger.info("No funding information found in the text")
+                return None
+
+            logger.info(
+                f"Extracted total funding: ${response.total_amount}M {response.currency}"
+            )
+            logger.info(f"Number of funding sources: {len(response.funding_sources)}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error extracting funding: {str(e)}")
             raise
