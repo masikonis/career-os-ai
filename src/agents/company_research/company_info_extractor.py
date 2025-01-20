@@ -1,13 +1,15 @@
 from typing import Optional
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.models.company.description import CompanyDescription
 from src.models.company.founders import CompanyFounders
 from src.models.company.founding_year import FoundingYear
 from src.models.company.funding import FundingInfo
 from src.models.company.growth_stage import CompanyGrowthStage
+from src.models.company.industry import CompanyIndustry
 from src.models.company.location import CompanyLocation
 from src.services.llm.factory import LLMFactory
 
@@ -239,4 +241,71 @@ class CompanyInfoExtractor:
 
         except Exception as e:
             logger.error(f"Error extracting funding: {str(e)}")
+            raise
+
+    def extract_industry(self, research_output: dict) -> Optional[CompanyIndustry]:
+        """Extract company industry and verticals from research output"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+
+            messages = [
+                HumanMessage(
+                    content=f"""Extract the company's industry information from the following text.
+                    Identify:
+                    1. The primary industry (e.g., EdTech, FinTech, HealthTech)
+                    2. List of specific verticals or market segments (e.g., K-12 Education, Science Education)
+                    Be specific but concise with the classifications.
+                    
+                    Text: {comprehensive_summary}
+                    """
+                )
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                CompanyIndustry,
+                model_type=self.model_type,
+                temperature=self.temperature,
+            )
+
+            if not response.primary_industry:
+                logger.info("No industry information found in the text")
+                return None
+
+            logger.info(f"Extracted primary industry: {response.primary_industry}")
+            logger.info(f"Verticals: {', '.join(response.verticals)}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error extracting industry: {str(e)}")
+            raise
+
+    def create_short_description(
+        self, research_output: dict
+    ) -> Optional[CompanyDescription]:
+        """Create a concise, professional summary of the research"""
+        try:
+            comprehensive_summary = research_output.get("comprehensive_summary", "")
+
+            messages = [
+                SystemMessage(
+                    content="""Create a brief, professional summary of this company research in 2-3 
+                    concise sentences. Focus on the most relevant facts while maintaining 
+                    a clear, objective tone."""
+                ),
+                HumanMessage(content=f"Text: {comprehensive_summary}"),
+            ]
+
+            response = self.llm.generate_structured_response(
+                messages,
+                CompanyDescription,
+                model_type=self.model_type,
+                temperature=0.5,
+            )
+
+            logger.info(f"Generated summary: {response.description}")
+            return response
+
+        except Exception as e:
+            logger.error(f"Error creating summary: {str(e)}")
             raise

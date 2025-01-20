@@ -3,9 +3,11 @@ import pytest
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
+from src.models.company.description import CompanyDescription
 from src.models.company.founders import CompanyFounders, Founder
 from src.models.company.funding import FundingInfo
 from src.models.company.growth_stage import CompanyGrowthStage, GrowthStage
+from src.models.company.industry import CompanyIndustry
 from src.models.company.location import CompanyLocation
 
 logger = get_logger(__name__)
@@ -17,7 +19,7 @@ def test_company_info_extractor_smoke():
 
     # Sample source text containing company name and website
     source_text = """
-    We are thrilled to welcome you to Acme Corp. For more details, visit our website at https://www.acmecorp.com.
+    Generation Genius is an innovative educational technology company. For more information, visit https://www.generationgenius.com.
     """
 
     try:
@@ -246,4 +248,79 @@ def test_extract_funding_smoke():
 
     except Exception as e:
         logger.error(f"Funding extraction test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_extract_industry_smoke():
+    """Test the extraction of company industry information from research output."""
+    extractor = CompanyInfoExtractor()
+
+    # Sample research output
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California. The platform specializes in creating engaging and interactive video lessons in science and math for K-8 students, aiming to make these subjects enjoyable and accessible...
+    """
+
+    try:
+        result = extractor.extract_industry(
+            {"comprehensive_summary": comprehensive_summary}
+        )
+
+        assert result is not None, "Industry extraction returned None"
+        assert isinstance(
+            result, CompanyIndustry
+        ), "Result should be a CompanyIndustry object"
+
+        # Check primary industry
+        assert (
+            result.primary_industry.lower() == "edtech"
+        ), "Primary industry should be EdTech"
+
+        # Check verticals - allow either K-8 or K-12 Education
+        verticals_lower = [v.lower() for v in result.verticals]
+        assert any(
+            v in verticals_lower for v in ["k-8 education", "k-12 education"]
+        ), "Should include K-8 or K-12 Education vertical"
+        assert (
+            "science education" in verticals_lower
+        ), "Should include Science Education vertical"
+
+        # Log the details
+        logger.info(f"Primary Industry: {result.primary_industry}")
+        logger.info(f"Verticals: {', '.join(result.verticals)}")
+
+    except Exception as e:
+        logger.error(f"Industry extraction test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_create_short_description_smoke():
+    """Test the creation of professional company summary."""
+    extractor = CompanyInfoExtractor()
+
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California. The platform specializes in creating engaging and interactive video lessons in science and math for K-8 students, aiming to make these subjects enjoyable and accessible. With a library of animated and live-action videos, hands-on activities, and comprehensive lesson plans aligned with the Next Generation Science Standards (NGSS), Generation Genius serves approximately 30% of elementary schools in the U.S. The company has received notable recognition, including being named one of TIME's 100 Most Influential Companies in 2023 and ranking on the Inc. 5000 list of fastest-growing companies. Generation Genius has raised a total of $1.6 million in funding, including a $1 million grant from the Howard Hughes Medical Institute and $1.07 million through crowdfunding. The team, led by Vinokur, is committed to transforming science education, and customer feedback highlights the platform's effectiveness in enhancing student engagement and learning outcomes, despite some concerns regarding subscription costs and the need for parental involvement.
+    """
+
+    try:
+        result = extractor.create_short_description(
+            {"comprehensive_summary": comprehensive_summary}
+        )
+
+        assert result is not None, "Description creation returned None"
+        assert isinstance(
+            result, CompanyDescription
+        ), "Result should be a CompanyDescription object"
+
+        # Just check that we got a reasonable length description
+        assert len(result.description) > 50, "Description too short"
+        assert len(result.description) < 1000, "Description too long"
+
+        # Log the description
+        logger.info("Generated Summary:")
+        logger.info(result.description)
+
+    except Exception as e:
+        logger.error(f"Description creation test failed: {e}")
         raise
