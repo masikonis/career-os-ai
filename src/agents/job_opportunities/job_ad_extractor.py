@@ -6,7 +6,7 @@ from pydantic import BaseModel, HttpUrl
 from src.logger import get_logger
 from src.models.company.company_info import CompanyInfo
 from src.models.job.job_details import JobDetails
-from src.models.job.job_location import LocationType, LocationTypeResponse
+from src.models.job.job_location import LocationType
 from src.services.llm.factory import LLMFactory
 from src.utilities.url import get_domain
 
@@ -105,11 +105,9 @@ class JobAdExtractor:
     def _empty_response(url: str = "") -> JobDetails:
         """Return empty response."""
         return JobDetails(
-            company=CompanyInfo(
-                company_name="", website_url="https://example.com"  # Default valid URL
-            ),
+            company=CompanyInfo(company_name="", website_url=None),
             title="",
             description="",
-            url=url or "https://example.com",  # Ensure valid URL
+            url=url or "",
             location_type=LocationType(type="Onsite"),
         )

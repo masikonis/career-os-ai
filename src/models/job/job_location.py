@@ -14,9 +14,3 @@ class LocationType(BaseModel):
     """
 
     type: Literal["Remote", "Hybrid", "Onsite"]
-
-
-class LocationTypeResponse(BaseModel):
-    """Pydantic model for LLM location type response."""
-
-    location_type: LocationType

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from src.agents.job_opportunities.job_ad_extractor import JobAdExtractor
 from src.logger import get_logger
 from src.models.job.job_details import JobDetails
@@ -20,7 +22,7 @@ def test_extract_details_valid_url():
 
     # Check non-empty values for required fields
     assert content_dict["company"]["company_name"], "Company name should not be empty"
-    assert content_dict["company"]["website_url"], "Website URL should not be empty"
+    # Website URL is now optional, so we don't assert it
     assert content_dict["title"], "Job title should not be empty"
     assert content_dict["description"], "Job description should not be empty"
     assert content_dict["url"], "URL should not be empty"
@@ -36,11 +38,25 @@ def test_extract_details_valid_url():
         "Onsite",
     ], "Location type should be one of: Remote, Hybrid, Onsite"
 
-    logger.info("Extracted job details:")
-    logger.info(f"Company: {content.company.company_name}")
-    logger.info(f"Title: {content.title}")
+    # Check posted date
+    assert "posted_date" in content_dict, "Posted date should be present"
+    if content.posted_date:
+        assert isinstance(
+            content.posted_date, datetime
+        ), "Posted date should be a datetime object"
+
+    # Print full model for inspection
+    logger.info("Full extracted job details:")
+    logger.info("------------------------")
+    logger.info(f"Company Name: {content.company.company_name}")
+    logger.info(f"Company Website: {content.company.website_url}")
+    logger.info(f"Job Title: {content.title}")
     logger.info(f"Location Type: {content.location_type.type}")
-    logger.info(f"Description excerpt: {content.description[:200]}...")
+    logger.info(f"Posted Date: {content.posted_date}")
+    logger.info(f"URL: {content.url}")
+    logger.info("Description:")
+    logger.info(f"{content.description[:200]}...")  # First 200 chars of description
+    logger.info("------------------------")
 
 
 def test_determine_location_type():

@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, HttpUrl
 
 from src.models.company.company_info import CompanyInfo
@@ -12,3 +15,4 @@ class JobDetails(BaseModel):
     description: str
     url: HttpUrl
     location_type: LocationType
+    posted_date: Optional[datetime] = None

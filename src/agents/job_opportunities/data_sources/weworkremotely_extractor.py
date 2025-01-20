@@ -1,6 +1,8 @@
 import re
+from datetime import datetime
 from typing import Optional
 
+import pytz
 import requests
 from bs4 import BeautifulSoup, Tag
 
@@ -30,20 +32,16 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "html.parser")
 
-            company_name = self._extract_company_name(soup)
-            logger.debug(f"Found company name: {company_name}")
-
             return JobDetails(
                 company=CompanyInfo(
-                    company_name=company_name,
-                    website_url="https://example.com",  # Default valid URL if not found
+                    company_name=self._extract_company_name(soup),
+                    website_url=self._extract_company_website(soup),
                 ),
                 title=self._extract_title(soup),
                 description=self._extract_description(soup),
                 url=normalize_url(job_ad_url),
-                location_type=LocationType(
-                    type="Remote"
-                ),  # WeWorkRemotely is a remote-only job board
+                location_type=LocationType(type="Remote"),
+                posted_date=self._extract_posted_date(soup),
             )
         except Exception as e:
             logger.error(f"Error extracting job details: {str(e)}")
@@ -87,14 +85,20 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
         logger.warning("Company name not found")
         return ""
 
-    def _extract_website_url(self, company_card: Tag) -> str:
-        """Get website URL from card."""
-        for h3 in company_card.find_all("h3"):
-            if a_tag := h3.find("a", href=True):
-                if "Website" in a_tag.get_text(strip=True):
-                    return normalize_url(a_tag["href"], self.BASE_URL)
-        logger.warning("Website URL not found")
-        return ""
+    def _extract_company_website(self, soup: BeautifulSoup) -> Optional[str]:
+        """Extract company website URL from page."""
+        try:
+            if company_card := self._find_company_card(soup):
+                if website_link := company_card.find("a", href=True, target="_blank"):
+                    if website_link.find("i", class_="fa-globe-americas"):
+                        website_url = website_link.get("href")
+                        logger.debug(f"Found company website: {website_url}")
+                        return website_url
+            logger.warning("Company website not found")
+            return None
+        except Exception as e:
+            logger.error(f"Error extracting company website: {str(e)}")
+            return None
 
     def _extract_title(self, soup: BeautifulSoup) -> str:
         """Get job title from page."""
@@ -121,6 +125,22 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
             if text := section.get_text(strip=True):
                 sections.append(sanitize_text(text))
         return sections
+
+    def _extract_posted_date(self, soup: BeautifulSoup) -> Optional[datetime]:
+        """Extract posted date from the job listing."""
+        try:
+            if header := soup.find("div", class_="listing-header-container"):
+                if time_tag := header.find("time"):
+                    datetime_str = time_tag.get("datetime")
+                    if datetime_str:
+                        return datetime.fromisoformat(
+                            datetime_str.replace("Z", "+00:00")
+                        )
+            logger.warning("Posted date not found")
+            return None
+        except Exception as e:
+            logger.error(f"Error parsing posted date: {str(e)}")
+            return None
 
     def needs_location_analysis(self) -> bool:
         """WWR is remote-only, no need for LLM analysis."""
