@@ -45,9 +45,22 @@ def test_extract_details_valid_url():
             content.posted_date, datetime
         ), "Posted date should be a datetime object"
 
+    # Check job_id format
+    assert content.job_id, "Job ID should not be empty"
+    assert content.job_id.startswith(
+        "job_ad_wew_"
+    ), "Job ID should start with job_ad_wew_"
+    assert (
+        len(content.job_id) == 19
+    ), "Job ID should be 19 characters (job_ad_src_hash format)"
+    assert (
+        content.job_id.count("_") == 3
+    ), "Job ID should contain three underscores (job_ad_src_hash)"
+
     # Print full model for inspection
     logger.info("Full extracted job details:")
     logger.info("------------------------")
+    logger.info(f"Job ID: {content.job_id}")
     logger.info(f"Company Name: {content.company.company_name}")
     logger.info(f"Company Website: {content.company.website_url}")
     logger.info(f"Job Title: {content.title}")
