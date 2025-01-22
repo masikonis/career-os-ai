@@ -1,6 +1,7 @@
+from hashlib import sha256
 from typing import List, Optional
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, computed_field
 
 from src.logger import get_logger
 
@@ -29,6 +30,39 @@ class Company(BaseModel):
     industry: Optional[CompanyIndustry] = None
     growth_stage: Optional[CompanyGrowthStage] = None
     funding: Optional[FundingInfo] = None
+
+    @computed_field
+    def company_id(self) -> str:
+        """Generate unique company ID combining domain prefix and content hash.
+
+        Returns:
+            str: Unique company ID in format 'company_prefix_hash' where:
+                - prefix is first 3 chars of normalized domain (or 'nwb' if no website)
+                - hash is based on full domain and company name
+
+        Examples:
+            >>> company_id
+            'company_pay_8f4b2c9e'  # PayPal (from paypal.com)
+            >>> company_id
+            'company_nwb_a7d8e9f3'  # Company without website
+        """
+        from src.utilities.company import normalize_company_name
+        from src.utilities.url import normalize_domain
+
+        # Get normalized components
+        norm_domain = normalize_domain(
+            str(self.website_url) if self.website_url else None
+        )
+        norm_name = normalize_company_name(self.company_name)
+
+        # Determine source
+        source = norm_domain[:3] if norm_domain else "nwb"
+
+        # Generate hash from normalized data
+        content = f"{norm_domain}:{norm_name}" if norm_domain else norm_name
+        content_hash = sha256(content.encode()).hexdigest()[:8]
+
+        return f"company_{source}_{content_hash}"
 
     def flatten(self) -> dict:
         """
