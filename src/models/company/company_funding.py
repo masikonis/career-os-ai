@@ -13,7 +13,7 @@ class FundingSource(BaseModel):
     )
 
 
-class FundingInfo(BaseModel):
+class CompanyFunding(BaseModel):
     total_amount: float | None = Field(description="Total funding amount in millions")
     currency: str = Field(description="Currency of the funding amounts", default="USD")
     funding_sources: List[FundingSource] = Field(

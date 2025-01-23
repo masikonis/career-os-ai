@@ -7,9 +7,9 @@ import requests
 from bs4 import BeautifulSoup, Tag
 
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
-from src.models.job.job_details import JobDetails
-from src.models.job.job_location import LocationType
+from src.models.company.company import Company
+from src.models.job.job import Job
+from src.models.job.job_location import JobLocation
 from src.utilities.text import preserve_paragraphs, sanitize_text
 from src.utilities.url import normalize_url
 
@@ -25,35 +25,39 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
     TIMEOUT = 10
     RELEVANT_TAGS = ["p", "ul", "h1", "h2", "h3", "h4", "h5", "h6"]
 
-    def extract_details(self, job_ad_url: str) -> JobDetails:
+    def extract_details(self, job_ad_url: str) -> Job:
         """Extract job details from URL."""
         try:
             response = requests.get(job_ad_url)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "html.parser")
 
-            return JobDetails(
-                company=CompanyInfo(
+            return Job(
+                company=Company.from_basic_info(
                     company_name=self._extract_company_name(soup),
                     website_url=self._extract_company_website(soup),
                 ),
                 title=self._extract_title(soup),
                 description=self._extract_description(soup),
                 url=normalize_url(job_ad_url),
-                location_type=LocationType(type="Remote"),
+                location_type=JobLocation(type="Remote"),
                 posted_date=self._extract_posted_date(soup),
             )
         except Exception as e:
             logger.error(f"Error extracting job details: {str(e)}")
             raise
 
-    def _empty_response(self, url: str) -> JobDetails:
+    def _empty_response(self, url: str) -> Job:
         """Return empty response."""
-        return JobDetails(
-            company=CompanyInfo(company_name="", website_url=""),
+        return Job(
+            company=Company.from_basic_info(
+                company_name="",
+                website_url=None,
+            ),
             title="",
             description="",
             url=url,
+            location_type=JobLocation(type="Remote"),
         )
 
     def _fetch_and_parse(self, url: str) -> Optional[BeautifulSoup]:

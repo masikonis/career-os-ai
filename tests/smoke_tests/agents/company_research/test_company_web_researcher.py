@@ -2,7 +2,7 @@ import pytest
 
 from src.agents.company_research.company_web_researcher import CompanyWebResearcher
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
+from src.models.company.company import Company
 
 logger = get_logger(__name__)
 
@@ -16,13 +16,13 @@ def test_company_web_researcher_smoke():
     researcher = CompanyWebResearcher()
 
     # Sample company information
-    company_info = CompanyInfo(
+    company = Company.from_basic_info(
         company_name="Generation Genius",
         website_url="https://www.generationgenius.com/",
     )
 
     try:
-        result = researcher.research_company(company_info)
+        result = researcher.research_company(company)
 
         assert result is not None, "Researcher returned None."
         assert isinstance(result, str), "Result should be a string."

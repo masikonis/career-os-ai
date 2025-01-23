@@ -5,18 +5,25 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, HttpUrl, computed_field
 
-from src.models.company.company_info import CompanyInfo
-from src.models.job.job_location import LocationType
+from src.logger import get_logger
+from src.models.company.company import Company
+
+from .job_location import JobLocation
+
+logger = get_logger(__name__)
 
 
-class JobDetails(BaseModel):
-    """Job posting details."""
+class Job(BaseModel):
+    """Master schema for a job posting, including all job-related information."""
 
-    company: CompanyInfo
+    # Company Info
+    company: Company
+
+    # Basic Job Info
     title: str
     description: str
     url: HttpUrl
-    location_type: LocationType
+    location_type: JobLocation
     posted_date: Optional[datetime] = None
 
     @computed_field

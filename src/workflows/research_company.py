@@ -1,7 +1,7 @@
 from prefect import flow
 
 from src.agents.company_research.company_web_researcher import CompanyWebResearcher
-from src.models.company.company_info import CompanyInfo
+from src.models.company.company import Company
 
 
 class CompanyResearchFlow:
@@ -18,10 +18,10 @@ class CompanyResearchFlow:
         """
         Prefect flow to research a company.
         """
-        company_info = CompanyInfo(
+        company = Company.from_basic_info(
             company_name=self.company_name, website_url=self.website_url
         )
-        summary = self.researcher.research_company(company_info)
+        summary = self.researcher.research_company(company)
         return {
             "message": f"Research completed for {self.company_name}.",
             "summary": summary,

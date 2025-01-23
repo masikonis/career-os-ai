@@ -4,9 +4,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, HttpUrl
 
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
-from src.models.job.job_details import JobDetails
-from src.models.job.job_location import LocationType
+from src.models.company.company import Company
+from src.models.job.job import Job
+from src.models.job.job_location import JobLocation
 from src.services.llm.factory import LLMFactory
 from src.utilities.url import get_domain
 
@@ -28,7 +28,7 @@ class JobAdExtractor:
         self.temperature = temperature
         logger.info("JobAdExtractor initialized with extractors and LLM provider")
 
-    def extract_details(self, job_ad_url: str) -> JobDetails:
+    def extract_details(self, job_ad_url: str) -> Job:
         """Extract job details from URL."""
         if not job_ad_url:
             logger.error("Empty URL provided")
@@ -59,7 +59,7 @@ class JobAdExtractor:
             logger.error(f"Error extracting details: {str(e)}")
             return self._empty_response(job_ad_url)
 
-    def _determine_location_type(self, description: str) -> LocationType:
+    def _determine_location_type(self, description: str) -> JobLocation:
         """Use LLM to determine the location type from job description."""
         try:
             messages = [
@@ -86,7 +86,7 @@ class JobAdExtractor:
 
             response = self.llm.generate_structured_response(
                 messages,
-                LocationType,
+                JobLocation,
                 model_type=self.model_type,
                 temperature=self.temperature,
             )
@@ -95,19 +95,19 @@ class JobAdExtractor:
 
         except Exception as e:
             logger.error(f"Error determining location type: {str(e)}")
-            return LocationType(type="Onsite")  # Default to Onsite
+            return JobLocation(type="Onsite")  # Default to Onsite
 
     def get_extractor(self, domain: str) -> ExtractorInterface | None:
         """Get extractor for domain."""
         return self.extractors.get(domain)
 
     @staticmethod
-    def _empty_response(url: str = "") -> JobDetails:
+    def _empty_response(url: str = "") -> Job:
         """Return empty response."""
-        return JobDetails(
-            company=CompanyInfo(company_name="", website_url=None),
+        return Job(
+            company=Company.from_basic_info(company_name=""),
             title="",
             description="",
             url=url or "",
-            location_type=LocationType(type="Onsite"),
+            location_type=JobLocation(type="Onsite"),
         )

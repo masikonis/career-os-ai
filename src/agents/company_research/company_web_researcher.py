@@ -6,7 +6,7 @@ from langchain.schema import HumanMessage, SystemMessage
 from langchain_community.document_loaders import WebBaseLoader
 
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
+from src.models.company.company import Company
 from src.services.llm.factory import LLMFactory
 from src.services.web_search.factory import WebSearchFactory
 
@@ -35,11 +35,11 @@ class CompanyWebResearcher:
             "CompanyWebResearcher initialized with LLM, and WebSearch providers"
         )
 
-    def research_company(self, company_info: CompanyInfo) -> str:
+    def research_company(self, company: Company) -> str:
         """Research the company by performing multiple targeted searches and consolidate the information."""
         try:
-            company_name = company_info.company_name
-            website_url = str(company_info.website_url)
+            company_name = company.company_name
+            website_url = str(company.website_url)
             logger.info(f"Starting research for company: {company_name}")
 
             # Step 1: Scrape the Home Page

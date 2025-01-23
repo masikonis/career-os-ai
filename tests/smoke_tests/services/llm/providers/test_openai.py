@@ -41,8 +41,8 @@ def test_openai_provider_smoke():
             structured_response, Company
         ), "Structured response is not an instance of Company."
 
-        assert structured_response.info.company_name, "Company 'company_name' is empty."
-        assert structured_response.info.website_url, "Company 'website_url' is empty."
+        assert structured_response.company_name, "Company 'company_name' is empty."
+        assert structured_response.website_url, "Company 'website_url' is empty."
 
         logger.info("Company structured response generated successfully.")
     except Exception:

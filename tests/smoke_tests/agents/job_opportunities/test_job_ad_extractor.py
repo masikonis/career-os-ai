@@ -2,8 +2,8 @@ from datetime import datetime
 
 from src.agents.job_opportunities.job_ad_extractor import JobAdExtractor
 from src.logger import get_logger
-from src.models.job.job_details import JobDetails
-from src.models.job.job_location import LocationType
+from src.models.job.job import Job
+from src.models.job.job_location import JobLocation
 
 logger = get_logger(__name__)
 
@@ -14,8 +14,8 @@ def test_extract_details_valid_url():
     sample_url = "https://weworkremotely.com/remote-jobs/bluegamma-full-stack-developer"
     content = extractor.extract_details(sample_url)
 
-    # Check if it's a JobDetails instance
-    assert isinstance(content, JobDetails), "Content should be a JobDetails instance"
+    # Check if it's a Job instance
+    assert isinstance(content, Job), "Content should be a Job instance"
 
     # Convert to dict for easier testing
     content_dict = content.model_dump()
@@ -30,8 +30,8 @@ def test_extract_details_valid_url():
     # Check location type
     assert "location_type" in content_dict, "Location type should be present"
     assert isinstance(
-        content.location_type, LocationType
-    ), "Location type should be a LocationType model"
+        content.location_type, JobLocation
+    ), "Location type should be a JobLocation model"
     assert content.location_type.type in [
         "Remote",
         "Hybrid",

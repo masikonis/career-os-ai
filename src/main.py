@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.config import load_config
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
+from src.models.company.company import Company
 from src.workflows.research_company import CompanyResearchFlow
 
 app = FastAPI()
@@ -40,14 +40,12 @@ def run_research_flow(company_name: str, website_url: str):
 
 
 @app.post("/flows/research-company")
-def trigger_research_company_flow(
-    company_info: CompanyInfo, background_tasks: BackgroundTasks
-):
+def trigger_research_company_flow(company: Company, background_tasks: BackgroundTasks):
     try:
         background_tasks.add_task(
-            run_research_flow, company_info.company_name, company_info.website_url
+            run_research_flow, company.company_name, company.website_url
         )
-        logger.info(f"Research task initiated for company: {company_info.company_name}")
+        logger.info(f"Research task initiated for company: {company.company_name}")
         return {"message": "Research has been initiated."}
     except Exception as e:
         logger.error(f"Failed to initiate research task: {e}")

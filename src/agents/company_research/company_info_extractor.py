@@ -3,14 +3,14 @@ from typing import Optional
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
-from src.models.company.description import CompanyDescription
-from src.models.company.founders import CompanyFounders
-from src.models.company.founding_year import FoundingYear
-from src.models.company.funding import FundingInfo
-from src.models.company.growth_stage import CompanyGrowthStage
-from src.models.company.industry import CompanyIndustry
-from src.models.company.location import CompanyLocation
+from src.models.company.company import Company
+from src.models.company.company_description import CompanyDescription
+from src.models.company.company_founders import CompanyFounders
+from src.models.company.company_founding_year import CompanyFoundingYear
+from src.models.company.company_funding import CompanyFunding
+from src.models.company.company_growth_stage import CompanyGrowthStage
+from src.models.company.company_industry import CompanyIndustry
+from src.models.company.company_location import CompanyLocation
 from src.services.llm.factory import LLMFactory
 
 logger = get_logger(__name__)
@@ -41,7 +41,7 @@ class CompanyInfoExtractor:
             ]
             response = self.llm.generate_structured_response(
                 messages,
-                CompanyInfo,
+                Company,
                 model_type=self.model_type,
                 temperature=self.temperature,
             )
@@ -67,7 +67,7 @@ class CompanyInfoExtractor:
             ]
             response = self.llm.generate_structured_response(
                 messages,
-                FoundingYear,
+                CompanyFoundingYear,
                 model_type=self.model_type,
                 temperature=self.temperature,
             )
@@ -216,7 +216,7 @@ class CompanyInfoExtractor:
             logger.error(f"Error extracting growth stage: {str(e)}")
             raise
 
-    def extract_funding(self, research_output: dict) -> Optional[FundingInfo]:
+    def extract_funding(self, research_output: dict) -> Optional[CompanyFunding]:
         """Extract company funding information from research output"""
         try:
             comprehensive_summary = research_output.get("comprehensive_summary", "")
@@ -233,7 +233,7 @@ class CompanyInfoExtractor:
             ]
             response = self.llm.generate_structured_response(
                 messages,
-                FundingInfo,
+                CompanyFunding,
                 model_type=self.model_type,
                 temperature=self.temperature,
             )

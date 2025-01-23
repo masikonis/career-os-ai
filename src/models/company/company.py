@@ -5,12 +5,12 @@ from pydantic import BaseModel, HttpUrl, computed_field
 
 from src.logger import get_logger
 
-from .description import CompanyDescription
-from .founders import CompanyFounders, Founder
-from .funding import FundingInfo, FundingSource
-from .growth_stage import CompanyGrowthStage, GrowthStage
-from .industry import CompanyIndustry
-from .location import CompanyLocation
+from .company_description import CompanyDescription
+from .company_founders import CompanyFounders, Founder
+from .company_funding import CompanyFunding, FundingSource
+from .company_growth_stage import CompanyGrowthStage, GrowthStage
+from .company_industry import CompanyIndustry
+from .company_location import CompanyLocation
 
 logger = get_logger(__name__)
 
@@ -29,7 +29,17 @@ class Company(BaseModel):
     location: Optional[CompanyLocation] = None
     industry: Optional[CompanyIndustry] = None
     growth_stage: Optional[CompanyGrowthStage] = None
-    funding: Optional[FundingInfo] = None
+    funding: Optional[CompanyFunding] = None
+
+    @classmethod
+    def from_basic_info(
+        cls, company_name: str, website_url: Optional[HttpUrl] = None
+    ) -> "Company":
+        """Create a Company instance with just basic information.
+
+        This factory method provides backward compatibility for code that previously used CompanyInfo.
+        """
+        return cls(company_name=company_name, website_url=website_url)
 
     @computed_field
     def company_id(self) -> str:

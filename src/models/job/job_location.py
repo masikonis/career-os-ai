@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-class LocationType(BaseModel):
+class JobLocation(BaseModel):
     """Type of work location.
 
     Attributes:

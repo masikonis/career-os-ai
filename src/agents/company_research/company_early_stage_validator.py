@@ -1,37 +1,35 @@
 from typing import Optional
 
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
-from src.models.company.growth_stage import GrowthStage
+from src.models.company.company import Company
+from src.models.company.company_growth_stage import GrowthStage
 from src.services.llm.factory import LLMFactory
 
 logger = get_logger(__name__)
 
 
-class EarlyStageValidator:
+class CompanyEarlyStageValidator:
     def __init__(self):
         self.llm = LLMFactory.get_provider()
 
-    def validate(
-        self, company_info: CompanyInfo, research_data: Optional[str] = None
-    ) -> bool:
+    def validate(self, company: Company, research_data: Optional[str] = None) -> bool:
         """
         Validates if a company appears to be early-stage (pre-Series A).
 
         Args:
-            company_info: Basic company information
+            company: Basic company information
             research_data: Optional research summary about the company
 
         Returns:
             bool: True if early-stage or uncertain, False if definitely later-stage
         """
         if research_data:
-            return self._validate_with_research(company_info, research_data)
-        return self._validate_with_llm_knowledge(company_info)
+            return self._validate_with_research(company, research_data)
+        return self._validate_with_llm_knowledge(company)
 
-    def _validate_with_llm_knowledge(self, company_info: CompanyInfo) -> bool:
+    def _validate_with_llm_knowledge(self, company: Company) -> bool:
         """Quick validation using only LLM's existing knowledge."""
-        prompt = f"""Based on your knowledge cutoff, analyze if {company_info.company_name} (website: {company_info.website_url}) 
+        prompt = f"""Based on your knowledge cutoff, analyze if {company.company_name} (website: {company.website_url}) 
         is at any of these stages:
         - IDEA stage
         - PRE_SEED stage
@@ -55,22 +53,20 @@ class EarlyStageValidator:
                 else "early-stage (pre-Series A)"
             )
             logger.info(
-                f"Company {company_info.company_name} validated as {stage_description} based on LLM knowledge"
+                f"Company {company.company_name} validated as {stage_description} based on LLM knowledge"
             )
 
             return not is_later_stage
 
         except Exception as e:
             logger.error(
-                f"Error validating company stage with LLM knowledge for {company_info.company_name}: {str(e)}"
+                f"Error validating company stage with LLM knowledge for {company.company_name}: {str(e)}"
             )
             return True  # Default to True (early-stage) in case of errors
 
-    def _validate_with_research(
-        self, company_info: CompanyInfo, research_data: str
-    ) -> bool:
+    def _validate_with_research(self, company: Company, research_data: str) -> bool:
         """Detailed validation using web research data."""
-        prompt = f"""Based on the following research about {company_info.company_name}, determine if it's a later-stage company.
+        prompt = f"""Based on the following research about {company.company_name}, determine if it's a later-stage company.
 
         Research summary:
         {research_data}
@@ -103,13 +99,13 @@ class EarlyStageValidator:
                 else "early-stage (pre-Series A)"
             )
             logger.info(
-                f"Company {company_info.company_name} validated as {stage_description} based on research data"
+                f"Company {company.company_name} validated as {stage_description} based on research data"
             )
 
             return not is_later_stage
 
         except Exception as e:
             logger.error(
-                f"Error validating company stage with research data for {company_info.company_name}: {str(e)}"
+                f"Error validating company stage with research data for {company.company_name}: {str(e)}"
             )
             return True  # Default to True (early-stage) in case of errors

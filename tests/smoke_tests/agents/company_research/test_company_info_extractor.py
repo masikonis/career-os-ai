@@ -2,13 +2,13 @@ import pytest
 
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
 from src.logger import get_logger
-from src.models.company.company_info import CompanyInfo
-from src.models.company.description import CompanyDescription
-from src.models.company.founders import CompanyFounders, Founder
-from src.models.company.funding import FundingInfo
-from src.models.company.growth_stage import CompanyGrowthStage, GrowthStage
-from src.models.company.industry import CompanyIndustry
-from src.models.company.location import CompanyLocation
+from src.models.company.company import Company
+from src.models.company.company_description import CompanyDescription
+from src.models.company.company_founders import CompanyFounders, Founder
+from src.models.company.company_funding import CompanyFunding
+from src.models.company.company_growth_stage import CompanyGrowthStage, GrowthStage
+from src.models.company.company_industry import CompanyIndustry
+from src.models.company.company_location import CompanyLocation
 
 logger = get_logger(__name__)
 
@@ -29,10 +29,10 @@ def test_company_info_extractor_smoke():
         assert isinstance(result, dict), "Result should be a dictionary."
 
         # Validate against CompanyInfo model
-        company_info = CompanyInfo(**result)
+        company = Company(**result)
 
-        assert company_info.company_name, "'company_name' is empty."
-        assert company_info.website_url, "'website_url' is empty."
+        assert company.company_name, "'company_name' is empty."
+        assert company.website_url, "'website_url' is empty."
         logger.info("CompanyInfoExtractor smoke test passed.")
     except Exception as e:
         logger.error(f"CompanyInfoExtractor smoke test failed: {e}")
@@ -210,7 +210,9 @@ def test_extract_funding_smoke():
         )
 
         assert result is not None, "Funding extraction returned None"
-        assert isinstance(result, FundingInfo), "Result should be a FundingInfo object"
+        assert isinstance(
+            result, CompanyFunding
+        ), "Result should be a CompanyFunding object"
 
         # Check total funding
         assert (

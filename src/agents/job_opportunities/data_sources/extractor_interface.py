@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.models.job.job_details import JobDetails
+from src.models.job.job import Job
 
 
 class ExtractorInterface(ABC):
@@ -14,14 +14,14 @@ class ExtractorInterface(ABC):
     """
 
     @abstractmethod
-    def extract_details(self, job_ad_url: str) -> JobDetails:
+    def extract_details(self, job_ad_url: str) -> Job:
         """Extract job details from URL.
 
         Args:
             job_ad_url: Job advertisement URL
 
         Returns:
-            JobDetails object
+            Job: Extracted job details
         """
         raise NotImplementedError
 
