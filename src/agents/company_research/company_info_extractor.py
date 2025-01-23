@@ -1,6 +1,9 @@
 from typing import Optional
+from urllib.parse import urljoin
 
+import requests
 from langchain_core.messages import HumanMessage, SystemMessage
+from pydantic import HttpUrl
 
 from src.logger import get_logger
 from src.models.company.company import Company
@@ -18,6 +21,19 @@ logger = get_logger(__name__)
 
 class CompanyInfoExtractor:
     """Agent that extracts essential company information"""
+
+    COMMON_CAREER_PATHS = [
+        "/careers",
+        "/jobs",
+        "/work-with-us",
+        "/join-us",
+        "/join",
+        "/career",
+        "/opportunities",
+        "/work-at",
+        "/employment",
+        "/hiring",
+    ]
 
     def __init__(self, model_type: str = "basic", temperature: float = 0.0):
         self.llm = LLMFactory.get_provider()
@@ -272,3 +288,40 @@ class CompanyInfoExtractor:
         except Exception as e:
             logger.error(f"Error creating summary: {str(e)}")
             raise
+
+    def find_careers_url(self, base_url: HttpUrl) -> Optional[str]:
+        """
+        Find careers page URL using common patterns.
+
+        Args:
+            base_url: Base company URL
+
+        Returns:
+            str: Valid careers page URL if found and accessible, None otherwise
+        """
+        if not base_url:
+            logger.debug("No base URL provided")
+            return None
+
+        base = str(base_url).rstrip("/")
+
+        for path in self.COMMON_CAREER_PATHS:
+            try:
+                potential_url = urljoin(base, path)
+                logger.debug(f"Checking potential careers URL: {potential_url}")
+
+                # Validate URL by making a HEAD request
+                response = requests.head(potential_url, timeout=5, allow_redirects=True)
+                if response.status_code == 200:
+                    logger.info(f"Found valid careers URL: {potential_url}")
+                    return potential_url
+
+            except requests.RequestException as e:
+                logger.debug(f"URL {potential_url} not accessible: {str(e)}")
+                continue
+            except Exception as e:
+                logger.error(f"Error checking URL {potential_url}: {str(e)}")
+                continue
+
+        logger.info("No valid careers URL found using common patterns")
+        return None

@@ -21,6 +21,7 @@ class Company(BaseModel):
     # Basic Info
     company_name: str
     website_url: Optional[HttpUrl] = None
+    careers_url: Optional[HttpUrl] = None
     description: Optional[CompanyDescription] = None
 
     # Detailed Information
@@ -82,6 +83,7 @@ class Company(BaseModel):
         flattened = {
             "company_name": self.company_name,
             "website_url": str(self.website_url) if self.website_url else None,
+            "careers_url": str(self.careers_url) if self.careers_url else None,
             "description": self.description.description if self.description else None,
             "founding_year": self.founding_year,
             # Location

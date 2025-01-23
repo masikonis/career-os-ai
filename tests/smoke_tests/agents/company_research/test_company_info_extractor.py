@@ -326,3 +326,27 @@ def test_create_description_smoke():
     except Exception as e:
         logger.error(f"Description creation test failed: {e}")
         raise
+
+
+@pytest.mark.smoke
+def test_find_careers_url_smoke():
+    extractor = CompanyInfoExtractor()
+
+    # Test with a known website
+    website_url = "https://www.generationgenius.com"
+
+    try:
+        careers_url = extractor.find_careers_url(website_url)
+
+        # We don't assert the exact URL since it might change
+        # Instead, we verify the method works without errors
+        logger.info(f"Found careers URL: {careers_url}")
+
+        # Test with invalid URL
+        invalid_result = extractor.find_careers_url(None)
+        assert invalid_result is None, "Should return None for invalid URL"
+
+        logger.info("find_careers_url smoke test passed.")
+    except Exception as e:
+        logger.error(f"find_careers_url smoke test failed: {e}")
+        raise
