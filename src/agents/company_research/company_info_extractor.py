@@ -325,3 +325,78 @@ class CompanyInfoExtractor:
 
         logger.info("No valid careers URL found using common patterns")
         return None
+
+    def extract_all_info(
+        self, research_output: dict, company_url: Optional[HttpUrl] = None
+    ) -> dict:
+        """Extract all available company information from research output."""
+        logger.info("Starting comprehensive information extraction")
+
+        try:
+            extracted_info = {
+                "careers_url": None,
+                "founding_year": None,
+                "founders": None,
+                "location": None,
+                "industry": None,
+                "growth_stage": None,
+                "funding": None,
+                "description": None,
+            }
+
+            # Do URL-based extraction first
+            if company_url:
+                try:
+                    extracted_info["careers_url"] = self.find_careers_url(company_url)
+                except Exception as e:
+                    logger.error(f"Failed to find careers URL: {e}")
+
+            # Then do LLM-based extractions
+            try:
+                extracted_info["founding_year"] = self.extract_founding_year(
+                    research_output
+                )
+            except Exception as e:
+                logger.error(f"Failed to extract founding year: {e}")
+
+            try:
+                extracted_info["founders"] = self.extract_founders(research_output)
+            except Exception as e:
+                logger.error(f"Failed to extract founders: {e}")
+
+            try:
+                extracted_info["location"] = self.extract_location(research_output)
+            except Exception as e:
+                logger.error(f"Failed to extract location: {e}")
+
+            try:
+                extracted_info["industry"] = self.extract_industry(research_output)
+            except Exception as e:
+                logger.error(f"Failed to extract industry: {e}")
+
+            try:
+                extracted_info["growth_stage"] = self.extract_growth_stage(
+                    research_output
+                )
+            except Exception as e:
+                logger.error(f"Failed to extract growth stage: {e}")
+
+            try:
+                extracted_info["funding"] = self.extract_funding(research_output)
+            except Exception as e:
+                logger.error(f"Failed to extract funding: {e}")
+
+            try:
+                extracted_info["description"] = self.create_description(research_output)
+            except Exception as e:
+                logger.error(f"Failed to create description: {e}")
+
+            # Log successful extractions
+            successful = [k for k, v in extracted_info.items() if v is not None]
+            logger.info(f"Successfully extracted: {', '.join(successful)}")
+
+            return extracted_info
+
+        except Exception as e:
+            logger.error(f"Error in comprehensive extraction: {e}")
+            raise

@@ -350,3 +350,73 @@ def test_find_careers_url_smoke():
     except Exception as e:
         logger.error(f"find_careers_url smoke test failed: {e}")
         raise
+
+
+@pytest.mark.smoke
+def test_extract_all_info_smoke():
+    """Test the comprehensive extraction of all company information."""
+    extractor = CompanyInfoExtractor()
+
+    # Using the full comprehensive summary as other tests
+    comprehensive_summary = """
+    Generation Genius is an innovative educational technology company founded in 2017 by scientist Jeff Vinokur and TV executive Eric Rollman, based in Los Angeles, California. The platform specializes in creating engaging and interactive video lessons in science and math for K-8 students, aiming to make these subjects enjoyable and accessible. With a library of animated and live-action videos, hands-on activities, and comprehensive lesson plans aligned with the Next Generation Science Standards (NGSS), Generation Genius serves approximately 30% of elementary schools in the U.S. The company has received notable recognition, including being named one of TIME's 100 Most Influential Companies in 2023 and ranking on the Inc. 5000 list of fastest-growing companies. Generation Genius has raised a total of $1.6 million in funding, including a $1 million grant from the Howard Hughes Medical Institute and $1.07 million through crowdfunding. The team, led by Vinokur, is committed to transforming science education, and customer feedback highlights the platform's effectiveness in enhancing student engagement and learning outcomes, despite some concerns regarding subscription costs and the need for parental involvement.
+    """
+
+    website_url = "https://www.generationgenius.com"
+
+    try:
+        result = extractor.extract_all_info(
+            {"comprehensive_summary": comprehensive_summary}, company_url=website_url
+        )
+
+        # Check that all expected keys are present
+        expected_keys = {
+            "careers_url",  # Move to top to match implementation order
+            "founding_year",
+            "founders",
+            "location",
+            "industry",
+            "growth_stage",
+            "funding",
+            "description",
+        }
+
+        # Validate URL-based fields first
+        if result["careers_url"]:
+            assert isinstance(
+                result["careers_url"], str
+            ), "Careers URL should be a string"
+            assert result["careers_url"].startswith(
+                "http"
+            ), "Careers URL should be a valid URL"
+
+        # Then validate LLM-based fields
+        assert result["founding_year"] == 2017, "Incorrect founding year"
+        assert isinstance(
+            result["founders"], CompanyFounders
+        ), "Founders should be CompanyFounders object"
+        assert isinstance(
+            result["location"], CompanyLocation
+        ), "Location should be CompanyLocation object"
+        assert isinstance(
+            result["industry"], CompanyIndustry
+        ), "Industry should be CompanyIndustry object"
+        assert isinstance(
+            result["growth_stage"], CompanyGrowthStage
+        ), "Growth stage should be CompanyGrowthStage object"
+        assert isinstance(
+            result["funding"], CompanyFunding
+        ), "Funding should be CompanyFunding object"
+        assert isinstance(
+            result["description"], CompanyDescription
+        ), "Description should be CompanyDescription object"
+
+        # Log successful extractions
+        logger.info("Successfully extracted all company information:")
+        for key, value in result.items():
+            if value is not None:
+                logger.info(f"{key}: {value}")
+
+    except Exception as e:
+        logger.error(f"Comprehensive extraction test failed: {e}")
+        raise
