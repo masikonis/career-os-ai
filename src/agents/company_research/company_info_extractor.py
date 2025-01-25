@@ -241,6 +241,7 @@ class CompanyInfoExtractor:
                     content=f"""Extract funding information from the following text.
                     Include total funding amount (in millions), and list each funding source with its amount and type.
                     For amounts, convert to millions (e.g., $1,000,000 = 1.0).
+                    If no funding information is found, return null for total_amount and an empty list for funding_sources.
                     If an amount is not specified for a source, return null for that amount.
                     
                     Text: {comprehensive_summary}
@@ -253,17 +254,20 @@ class CompanyInfoExtractor:
                 model_type=self.model_type,
                 temperature=self.temperature,
             )
-            if not response.funding_sources and not response.total_amount:
+
+            if response.total_amount is None and not response.funding_sources:
                 logger.info("No funding information found in the text")
-                return None
-            logger.info(
-                f"Extracted total funding: ${response.total_amount}M {response.currency}"
-            )
-            logger.info(f"Number of funding sources: {len(response.funding_sources)}")
+                return CompanyFunding(
+                    total_amount=None, currency="USD", funding_sources=[]
+                )
+
+            funding_str = str(response)
+            logger.info(f"Extracted funding info: {funding_str}")
             return response
+
         except Exception as e:
             logger.error(f"Error extracting funding: {str(e)}")
-            raise
+            return CompanyFunding(total_amount=None, currency="USD", funding_sources=[])
 
     def create_description(self, research_output: dict) -> Optional[CompanyDescription]:
         """Create a concise, professional summary of the research"""

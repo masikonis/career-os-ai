@@ -14,9 +14,16 @@ class FundingSource(BaseModel):
 
 
 class CompanyFunding(BaseModel):
-    total_amount: float | None = Field(description="Total funding amount in millions")
+    total_amount: float | None = Field(
+        description="Total funding amount in millions", default=None
+    )
     currency: str = Field(description="Currency of the funding amounts", default="USD")
     funding_sources: List[FundingSource] = Field(
         default_factory=list,
         description="List of individual funding sources and their details",
     )
+
+    def __str__(self) -> str:
+        if self.total_amount is None:
+            return "No funding information available"
+        return f"${self.total_amount}M {self.currency}"
