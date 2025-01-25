@@ -1,4 +1,4 @@
-from src.agents.job_opportunities.job_ads_scraper import JobAdsScraper
+from src.agents.job_discovery.job_ads_scraper import JobAdsScraper
 from src.logger import get_logger
 
 logger = get_logger(__name__)

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from src.agents.job_opportunities.job_ad_extractor import JobAdExtractor
+from src.agents.job_discovery.job_ad_extractor import JobAdExtractor
 from src.logger import get_logger
 from src.models.job.job import Job
 from src.models.job.job_location import JobLocation
