@@ -35,7 +35,7 @@ class CompanyWebResearcher:
             "CompanyWebResearcher initialized with LLM, and WebSearch providers"
         )
 
-    def research_company(self, company: Company) -> str:
+    def research_company(self, company: Company) -> dict:
         """Research the company by performing multiple targeted searches and consolidate the information."""
         try:
             company_name = company.company_name
@@ -110,7 +110,7 @@ class CompanyWebResearcher:
                 logger.warning(
                     "No documents were scraped and no home page summary available. Returning empty summary."
                 )
-                return ""
+                return {}
 
             # Summarize each scraped document concurrently
             doc_summaries = self.summarize_documents_concurrently(
@@ -121,14 +121,24 @@ class CompanyWebResearcher:
             if home_page_summary:
                 doc_summaries.append(home_page_summary)
 
-            # Consolidate all summaries into a comprehensive summary
-            comprehensive_summary = self.create_comprehensive_summary(
-                company_name, doc_summaries
-            )
-            logger.info("Completed research and summarization.")
-            logger.debug(comprehensive_summary)
+            # Create separate summaries for different aspects
+            summaries = {
+                "comprehensive_summary": self.create_comprehensive_summary(
+                    company_name, doc_summaries
+                ),
+                "company_summary": self.create_company_summary(
+                    company_name, doc_summaries
+                ),
+                "funding_summary": self.create_funding_summary(
+                    company_name, doc_summaries
+                ),
+                "team_summary": self.create_team_summary(company_name, doc_summaries),
+            }
 
-            return comprehensive_summary
+            logger.info("Completed research and summarization.")
+            logger.debug(summaries)
+
+            return summaries
         except Exception as e:
             logger.error(f"Error in research_company: {str(e)}")
             raise
@@ -298,4 +308,73 @@ class CompanyWebResearcher:
             return comprehensive_summary
         except Exception as e:
             logger.error(f"Error creating comprehensive summary: {str(e)}")
+            raise
+
+    def create_company_summary(self, company_name: str, summaries: list) -> str:
+        """Create a summary focused on company overview, products, and services."""
+        try:
+            combined_text = "\n".join(summaries)
+            prompt = (
+                f"From the following summaries about {company_name}, create a focused summary "
+                "about the company's core business, products, and services. Include their main "
+                "value proposition and target market. Keep it factual and concise.\n\n"
+                f"{combined_text}"
+            )
+            messages = [
+                SystemMessage(
+                    content="You are an expert at summarizing company business models and offerings."
+                ),
+                HumanMessage(content=prompt),
+            ]
+            return self.llm.generate_response(
+                messages, model_type=self.model_type, temperature=self.temperature
+            )
+        except Exception as e:
+            logger.error(f"Error creating company summary: {str(e)}")
+            raise
+
+    def create_funding_summary(self, company_name: str, summaries: list) -> str:
+        """Create a summary focused on funding and financial information."""
+        try:
+            combined_text = "\n".join(summaries)
+            prompt = (
+                f"From the following summaries about {company_name}, create a focused summary "
+                "about the company's funding history, including total funding amount, funding rounds, "
+                "key investors, and any relevant financial metrics. Keep it factual and concise.\n\n"
+                f"{combined_text}"
+            )
+            messages = [
+                SystemMessage(
+                    content="You are an expert at summarizing company funding and financial information."
+                ),
+                HumanMessage(content=prompt),
+            ]
+            return self.llm.generate_response(
+                messages, model_type=self.model_type, temperature=self.temperature
+            )
+        except Exception as e:
+            logger.error(f"Error creating funding summary: {str(e)}")
+            raise
+
+    def create_team_summary(self, company_name: str, summaries: list) -> str:
+        """Create a summary focused on team and leadership information."""
+        try:
+            combined_text = "\n".join(summaries)
+            prompt = (
+                f"From the following summaries about {company_name}, create a focused summary "
+                "about the company's team, including founders, key executives, and any relevant "
+                "background information about the leadership. Keep it factual and concise.\n\n"
+                f"{combined_text}"
+            )
+            messages = [
+                SystemMessage(
+                    content="You are an expert at summarizing company team and leadership information."
+                ),
+                HumanMessage(content=prompt),
+            ]
+            return self.llm.generate_response(
+                messages, model_type=self.model_type, temperature=self.temperature
+            )
+        except Exception as e:
+            logger.error(f"Error creating team summary: {str(e)}")
             raise

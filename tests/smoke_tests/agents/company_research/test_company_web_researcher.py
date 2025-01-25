@@ -11,24 +11,40 @@ logger = get_logger(__name__)
 def test_company_web_researcher_smoke():
     """
     Smoke test for CompanyWebResearcher.
-    Ensures that the researcher can process a basic company info and return a summary.
+    Ensures that the researcher can process a basic company info and return summaries.
     """
     researcher = CompanyWebResearcher()
 
     # Sample company information
     company = Company.from_basic_info(
-        company_name="Generation Genius",
-        website_url="https://www.generationgenius.com/",
+        company_name="SlideSpeak",
+        website_url="https://slidespeak.co",
     )
 
     try:
         result = researcher.research_company(company)
 
-        assert result is not None, "Researcher returned None."
-        assert isinstance(result, str), "Result should be a string."
-        assert len(result.strip()) > 0, "Result should not be empty."
+        # Check basic structure
+        assert result is not None, "Researcher returned None"
+        assert isinstance(result, dict), "Result should be a dictionary"
 
-        logger.info("CompanyWebResearcher smoke test passed.")
+        # Check for required summary types
+        expected_summaries = [
+            "comprehensive_summary",
+            "company_summary",
+            "funding_summary",
+            "team_summary",
+        ]
+        for summary_type in expected_summaries:
+            assert summary_type in result, f"Missing {summary_type} in result"
+            assert isinstance(
+                result[summary_type], str
+            ), f"{summary_type} should be a string"
+            assert (
+                len(result[summary_type].strip()) > 0
+            ), f"{summary_type} should not be empty"
+
+        logger.info("CompanyWebResearcher smoke test passed")
 
     except Exception as e:
         logger.error(f"CompanyWebResearcher smoke test failed: {e}")
