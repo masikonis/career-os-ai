@@ -28,7 +28,10 @@ class CompanyResearchWorkflow:
         }
 
     def serve(
-        self, name: str = "company-research-deployment", tags=None, interval: int = 60
+        self,
+        name: str = "company-research-deployment",
+        tags=None,
+        interval: int = 86400,
     ):
         """
         Deploy the workflow with the specified configuration.
