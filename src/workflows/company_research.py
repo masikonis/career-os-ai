@@ -4,19 +4,19 @@ from src.agents.company_research.company_web_researcher import CompanyWebResearc
 from src.models.company.company import Company
 
 
-class CompanyResearchFlow:
+class CompanyResearchWorkflow:
     def __init__(self, company_name: str = "Generation Genius", website_url: str = ""):
         """
-        Initialize the CompanyResearchFlow with the company name and website URL.
+        Initialize the CompanyResearchWorkflow with the company name and website URL.
         """
         self.company_name = company_name
         self.website_url = website_url
         self.researcher = CompanyWebResearcher()
 
     @flow(log_prints=True)
-    def research_company(self) -> dict:
+    def company_research(self) -> dict:
         """
-        Prefect flow to research a company.
+        Prefect workflow to research a company.
         """
         company = Company.from_basic_info(
             company_name=self.company_name, website_url=self.website_url
@@ -31,12 +31,12 @@ class CompanyResearchFlow:
         self, name: str = "company-research-deployment", tags=None, interval: int = 60
     ):
         """
-        Deploy the flow with the specified configuration.
+        Deploy the workflow with the specified configuration.
         """
         if tags is None:
             tags = ["research"]
 
-        self.research_company.serve(
+        self.company_research.serve(
             name=name,
             tags=tags,
             parameters={
@@ -48,8 +48,8 @@ class CompanyResearchFlow:
 
 
 if __name__ == "__main__":
-    research_flow = CompanyResearchFlow(
+    research_workflow = CompanyResearchWorkflow(
         company_name="Generation Genius",
         website_url="https://www.generationgenius.com/",
     )
-    research_flow.serve()
+    research_workflow.serve()

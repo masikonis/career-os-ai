@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from src.config import load_config
 from src.logger import get_logger
 from src.models.company.company import Company
-from src.workflows.research_company import CompanyResearchFlow
+from src.workflows.company_research import CompanyResearchWorkflow
 
 app = FastAPI()
 logger = get_logger(__name__)
@@ -24,26 +24,28 @@ async def read_root():
 
 
 # Flow endpoints
-def run_research_flow(company_name: str, website_url: str):
-    """Function to run the Prefect flow."""
+def run_company_research_workflow(company_name: str, website_url: str):
+    """Function to run the Prefect workflow."""
     try:
         logger.info(
-            f"Starting research flow for company: {company_name}, website: {website_url}"
+            f"Starting company research workflow for company: {company_name}, website: {website_url}"
         )
-        research_flow = CompanyResearchFlow(
+        research_workflow = CompanyResearchWorkflow(
             company_name=company_name, website_url=website_url
         )
-        result = research_flow.research_company()
-        logger.info(f"Flow completed: {result}")
+        result = research_workflow.company_research()
+        logger.info(f"Workflow completed: {result}")
     except Exception as e:
-        logger.error(f"Error running research flow: {e}")
+        logger.error(f"Error running company research workflow: {e}")
 
 
-@app.post("/flows/research-company")
-def trigger_research_company_flow(company: Company, background_tasks: BackgroundTasks):
+@app.post("/workflows/company-research")
+def trigger_company_research_workflow(
+    company: Company, background_tasks: BackgroundTasks
+):
     try:
         background_tasks.add_task(
-            run_research_flow, company.company_name, company.website_url
+            run_company_research_workflow, company.company_name, company.website_url
         )
         logger.info(f"Research task initiated for company: {company.company_name}")
         return {"message": "Research has been initiated."}
