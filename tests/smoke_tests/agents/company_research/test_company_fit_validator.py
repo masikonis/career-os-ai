@@ -1,9 +1,7 @@
 import pytest
 from pydantic import HttpUrl
 
-from src.agents.company_research.company_early_stage_validator import (
-    CompanyEarlyStageValidator,
-)
+from src.agents.company_research.company_fit_validator import CompanyFitValidator
 from src.logger import get_logger
 from src.models.company.company import Company
 
@@ -12,7 +10,7 @@ logger = get_logger(__name__)
 
 @pytest.fixture
 def validator():
-    return CompanyEarlyStageValidator()
+    return CompanyFitValidator()
 
 
 @pytest.mark.smoke
@@ -25,10 +23,10 @@ def test_validate_early_stage_company(validator):
 
     try:
         result = validator.validate(company)
-        assert result is True, "Generation Genius should be identified as early-stage"
-        logger.info("Early-stage validation test passed for Generation Genius")
+        assert result is True, "Generation Genius should be identified as fitting ICP"
+        logger.info("ICP validation test passed for Generation Genius")
     except Exception as e:
-        logger.error(f"Early-stage validation test failed: {e}")
+        logger.error(f"ICP validation test failed: {e}")
         raise
 
 
@@ -41,10 +39,10 @@ def test_validate_later_stage_company(validator):
 
     try:
         result = validator.validate(company)
-        assert result is False, "Stripe should be identified as later-stage"
-        logger.info("Later-stage validation test passed for Stripe")
+        assert result is False, "Stripe should be identified as not fitting ICP"
+        logger.info("Non-ICP validation test passed for Stripe")
     except Exception as e:
-        logger.error(f"Later-stage validation test failed: {e}")
+        logger.error(f"Non-ICP validation test failed: {e}")
         raise
 
 
@@ -67,7 +65,7 @@ def test_validate_with_research_data(validator):
         result = validator.validate(company, research_data)
         assert (
             result is True
-        ), "Generation Genius should be identified as early-stage based on research data"
+        ), "Generation Genius should be identified as fitting ICP based on research data"
         logger.info("Research-based validation test passed for Generation Genius")
     except Exception as e:
         logger.error(f"Research-based validation test failed: {e}")

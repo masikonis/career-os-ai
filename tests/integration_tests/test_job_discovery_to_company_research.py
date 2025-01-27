@@ -3,9 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from src.agents.company_research.company_early_stage_validator import (
-    CompanyEarlyStageValidator,
-)
+from src.agents.company_research.company_fit_validator import CompanyEarlyStageValidator
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
 from src.agents.company_research.company_web_researcher import CompanyWebResearcher
 from src.agents.job_discovery.job_ad_extractor import JobAdExtractor
