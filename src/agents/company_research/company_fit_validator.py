@@ -34,33 +34,44 @@ class CompanyFitValidator:
     def _validate_with_llm_knowledge(self, company: Company) -> bool:
         """Quick validation using only LLM's existing knowledge."""
         prompt = f"""Based on your knowledge cutoff, analyze if {company.company_name} (website: {company.website_url}) 
-        fits these criteria:
+        fits our target company criteria.
 
-        1. Is it a product-focused company? (can be tech-enabled products like educational content, but NOT pure services/consulting)
-        2. Is it NOT a developer hiring/vetting platform?
-        3. Is it a modern digital business? (not a traditional/legacy business)
-        4. Is it pre-Series A stage? Consider these stages:
-           - IDEA stage
-           - PRE_SEED stage
-           - MVP stage
-           - SEED stage
-           - EARLY stage (but pre-Series A)
-           - LATER stage (Series A or beyond - AUTOMATIC DISQUALIFICATION)
+        IMPORTANT: We are looking for early-stage product companies that create:
+        A. Software products (SaaS, etc.)
+        B. Tech-enabled content products (e.g. educational video content platforms that CREATE and DISTRIBUTE content)
+        C. Digital products with clear value proposition
 
-        Respond 'UNFIT' if ANY of these are true:
-        - Company has raised Series A or beyond funding
-        - Company is publicly traded
-        - Company is a unicorn or well-established tech company
-        - Company is a dev hiring/vetting platform
-        - Company is primarily a services business
-        - Company is a legacy/non-digital business
-
-        Otherwise, respond 'FIT'.
+        You MUST respond 'UNFIT' if the company primarily does ANY of these:
+        1. Education/Training Services:
+           - Offers bootcamps or courses as main product
+           - Provides training/certification programs
+           - Focuses on teaching/training delivery
+           - Offers job placement or career services
         
+        2. Developer Services:
+           - Developer hiring/talent matching
+           - Developer vetting/testing
+           - Freelance developer marketplace
+           - Developer recruitment platform
+        
+        3. Company Stage/Type:
+           - Series A or beyond funding
+           - Public companies
+           - Unicorns or well-established tech companies
+           - Pure consulting/services businesses
+           - Traditional/legacy businesses
+           - Pure marketplace without own product
+
+        IMPORTANT DISTINCTION:
+        - A company that CREATES educational content/products = FIT
+        - A company that DELIVERS education/training = UNFIT
+
         Response (FIT/UNFIT):"""
 
         try:
-            response = self.llm.generate_response(prompt)
+            response = self.llm.generate_response(
+                prompt, model_type="reasoning", temperature=1
+            )
             is_unfit = "UNFIT" in response.upper()
 
             fit_description = "does not fit ICP" if is_unfit else "fits ICP"
@@ -83,36 +94,36 @@ class CompanyFitValidator:
         Research summary:
         {research_data}
 
-        Analyze if the company meets ALL these criteria:
-        1. Product Focus:
-           - Offers a clear product or tech-enabled solution (can be content, educational materials, etc.)
-           - Not primarily services/consulting
-           - Not a developer hiring/vetting platform
+        We are looking for early-stage product companies. The product can be:
+        - Software products (SaaS, etc.)
+        - Tech-enabled content/media products
+        - Digital products with clear value proposition
 
-        2. Business Type:
-           - Modern digital or tech-enabled business
-           - Not a traditional/legacy business
-           - Not a pure marketplace/platform
-
-        3. Company Stage:
-           - Pre-Series A stage
-           - Could be: IDEA, PRE-SEED, MVP, SEED, or EARLY
-           - Not at Series A or beyond
-
-        4. Other Indicators:
-           - Funding rounds and amounts
-           - Employee count
-           - Market presence
-           - Product maturity
-           - Revenue/growth stage
+        Respond 'UNFIT' if ANY of these are true:
+        1. Education/Training Business:
+           - Offers bootcamps
+           - Provides job guarantees
+           - Offers training programs
+           - Delivers courses
+           - Focuses on student outcomes
         
-        Only respond 'UNFIT' if the research clearly shows the company doesn't meet our criteria.
-        If uncertain or company appears to fit, respond 'FIT'.
+        2. Developer Services:
+           - Developer hiring/talent matching
+           - Developer vetting/testing
+           - Freelance developer marketplace
         
+        3. Company Stage/Type:
+           - Series A or beyond funding
+           - Public companies
+           - Unicorns or well-established tech companies
+           - Pure consulting/services businesses
+           - Traditional/legacy businesses
+           - Pure marketplace without own product
+
         Response (FIT/UNFIT):"""
 
         try:
-            response = self.llm.generate_response(prompt)
+            response = self.llm.generate_response(prompt, model_type="advanced")
             is_unfit = "UNFIT" in response.upper()
 
             fit_description = "does not fit ICP" if is_unfit else "fits ICP"
