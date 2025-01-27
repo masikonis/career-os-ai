@@ -150,7 +150,7 @@ class CompanyFitValidator:
 
         try:
             response = self.llm.generate_response(
-                prompt, model_type="reasoning", temperature=1
+                prompt, model_type="basic", temperature=0
             )
             is_unfit = "UNFIT" in response.upper()
 
