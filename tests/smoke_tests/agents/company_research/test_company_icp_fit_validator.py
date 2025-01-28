@@ -1,8 +1,7 @@
 import pytest
-from langchain_community.document_loaders import WebBaseLoader
 from pydantic import HttpUrl
 
-from src.agents.company_research.company_fit_validator import CompanyFitValidator
+from src.agents.company_research.company_icp_fit_validator import CompanyICPFitValidator
 from src.logger import get_logger
 from src.models.company.company import Company
 
@@ -11,7 +10,7 @@ logger = get_logger(__name__)
 
 @pytest.fixture
 def validator():
-    return CompanyFitValidator()
+    return CompanyICPFitValidator()
 
 
 @pytest.mark.smoke

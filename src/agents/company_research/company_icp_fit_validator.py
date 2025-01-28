@@ -1,7 +1,3 @@
-from typing import Optional
-
-from langchain_community.document_loaders import WebBaseLoader
-
 from src.logger import get_logger
 from src.models.company.company import Company
 from src.services.llm.factory import LLMFactory
@@ -9,7 +5,7 @@ from src.services.llm.factory import LLMFactory
 logger = get_logger(__name__)
 
 
-class CompanyFitValidator:
+class CompanyICPFitValidator:
     def __init__(self):
         self.llm = LLMFactory.get_provider()
 
