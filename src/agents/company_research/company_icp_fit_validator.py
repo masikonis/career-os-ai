@@ -17,7 +17,9 @@ class CompanyICPFitValidator:
         prompt = f"""Based on the following research about {company.company_name}, determine if it fits our target criteria.
 
         Research Data:
+        <research_data>
         {research_data}
+        </research_data>
 
         IMPORTANT: We are looking for early-stage product companies that create:
         A. Software products (SaaS, etc.)
