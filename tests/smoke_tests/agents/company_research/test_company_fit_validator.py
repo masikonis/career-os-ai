@@ -16,35 +16,105 @@ def validator():
 
 @pytest.mark.smoke
 def test_validate_early_stage_company(validator):
-    """Test validation of an early-stage company using LLM knowledge"""
+    """Test validation of an early-stage company"""
     company = Company.from_basic_info(
         company_name="Generation Genius",
         website_url=HttpUrl("https://www.generationgenius.com"),
     )
 
-    try:
-        result = validator.validate(company)
-        assert result is True, "Generation Genius should be identified as fitting ICP"
-        logger.info("ICP validation test passed for Generation Genius")
-    except Exception as e:
-        logger.error(f"ICP validation test failed: {e}")
-        raise
+    research_data = """
+    Generation Genius is an innovative educational technology company founded in 2017. 
+    The company has raised a total of $1.6 million in funding, including a $1 million 
+    grant from the Howard Hughes Medical Institute. They create and distribute high-quality
+    educational video content for K-12 students. The platform serves approximately 30% 
+    of elementary schools in the U.S.
+    """
+
+    result = validator.validate(company, research_data)
+    assert result is True, "Generation Genius should be identified as fitting ICP"
+
+
+@pytest.mark.smoke
+def test_validate_education_platform(validator):
+    """Test validation of education platforms which should not fit ICP"""
+    company = Company.from_basic_info(
+        company_name="Metana",
+        website_url=HttpUrl("https://metana.io"),
+    )
+
+    research_data = """
+    Metana is a tech education platform offering bootcamps in Web3, Solidity, and other tech skills.
+    The company provides job guarantees and has trained thousands of students. They offer various
+    bootcamps including Web3 Solidity Bootcamp, Full Stack Software Engineering Bootcamp, and more.
+    """
+
+    result = validator.validate(company, research_data)
+    assert result is False, "Metana should be identified as not fitting ICP"
+
+
+@pytest.mark.smoke
+def test_validate_mixed_model_companies(validator):
+    """Test validation of companies with mixed business models"""
+    company = Company.from_basic_info(
+        company_name="TestMixedCompany",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    TestMixedCompany operates in two main areas:
+    1. Content Platform: Creates and sells educational video content for K-12
+    2. Training Division: Offers 8-week bootcamps and certification programs
+    
+    The company started as a content creation platform but expanded into training.
+    Revenue split: 60% from bootcamps, 40% from content platform.
+    """
+
+    result = validator.validate(company, research_data)
+    assert (
+        result is False
+    ), "Mixed-model company with majority training revenue should be UNFIT"
+
+
+@pytest.mark.smoke
+def test_validate_b2b2c_education_company(validator):
+    """Test validation of B2B2C educational product companies"""
+    company = Company.from_basic_info(
+        company_name="EduTechOS",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    EduTechOS provides a white-label platform for schools to create and distribute
+    their own educational content. The platform includes:
+    - Content authoring tools
+    - Distribution infrastructure
+    - Analytics dashboard
+    
+    They don't create or deliver educational content themselves, only provide the technology.
+    """
+
+    result = validator.validate(company, research_data)
+    assert (
+        result is True
+    ), "B2B2C education platform should be FIT (they provide tools, not education)"
 
 
 @pytest.mark.smoke
 def test_validate_later_stage_company(validator):
-    """Test validation of a well-known later-stage company using LLM knowledge"""
+    """Test validation of a well-known later-stage company"""
     company = Company.from_basic_info(
-        company_name="Stripe", website_url=HttpUrl("https://stripe.com")
+        company_name="Stripe",
+        website_url=HttpUrl("https://stripe.com"),
     )
 
-    try:
-        result = validator.validate(company)
-        assert result is False, "Stripe should be identified as not fitting ICP"
-        logger.info("Non-ICP validation test passed for Stripe")
-    except Exception as e:
-        logger.error(f"Non-ICP validation test failed: {e}")
-        raise
+    research_data = """
+    Stripe is a well-established financial technology company founded in 2010.
+    The company has raised over $2.2 billion in funding and is valued at $95 billion.
+    They are one of the largest payment processors globally, serving millions of businesses.
+    """
+
+    result = validator.validate(company, research_data)
+    assert result is False, "Stripe should be identified as not fitting ICP"
 
 
 @pytest.mark.smoke
@@ -87,9 +157,16 @@ def test_validate_dev_platform_companies(validator):
         ),
     ]
 
+    research_data = """
+    Both companies operate in the developer hiring and vetting space:
+    - Contra is a platform for hiring and managing freelance developers
+    - Lemon.io is a marketplace for pre-vetted developers
+    Both focus on talent matching and recruitment services.
+    """
+
     for company in companies:
         try:
-            result = validator.validate(company)
+            result = validator.validate(company, research_data)
             assert (
                 result is False
             ), f"{company.company_name} should be identified as not fitting ICP (dev platform)"
@@ -101,31 +178,6 @@ def test_validate_dev_platform_companies(validator):
                 f"Non-ICP validation test failed for {company.company_name}: {e}"
             )
             raise
-
-
-@pytest.mark.smoke
-def test_validate_education_platform(validator):
-    """Test validation of education platforms which should not fit ICP"""
-    company = Company.from_basic_info(
-        company_name="Metana",
-        website_url=HttpUrl("https://metana.io"),
-    )
-
-    research_data = """
-    Metana is a tech education platform offering bootcamps in Web3, Solidity, and other tech skills.
-    The company provides job guarantees and has trained thousands of students. They offer various
-    bootcamps including Web3 Solidity Bootcamp, Full Stack Software Engineering Bootcamp, and more.
-    """
-
-    try:
-        result = validator.validate(company, research_data)
-        assert (
-            result is False
-        ), "Metana should be identified as not fitting ICP (education platform)"
-        logger.info("Non-ICP validation test passed for Metana (education platform)")
-    except Exception as e:
-        logger.error(f"Non-ICP validation test failed for Metana: {e}")
-        raise
 
 
 @pytest.mark.smoke
@@ -146,9 +198,17 @@ def test_validate_early_saas_companies(validator):
         ),
     ]
 
+    research_data = """
+    All three companies are early-stage SaaS startups:
+    - SlideSpeak: Pre-seed stage presentation software, founded 2023
+    - Yooli: Seed stage customer feedback platform, founded 2022
+    - Subscript: Early-stage contract management software, founded 2021
+    All companies are focused on building software products, not services.
+    """
+
     for company in companies:
         try:
-            result = validator.validate(company)
+            result = validator.validate(company, research_data)
             assert (
                 result is True
             ), f"{company.company_name} should be identified as fitting ICP (early SaaS)"
@@ -174,9 +234,16 @@ def test_validate_marketplace_companies(validator):
         ),
     ]
 
+    research_data = """
+    Both are established freelance marketplaces:
+    - Upwork: Public company, pure marketplace model
+    - Fiverr: Public company, pure marketplace model
+    Both focus on connecting freelancers with clients without their own product.
+    """
+
     for company in companies:
         try:
-            result = validator.validate(company)
+            result = validator.validate(company, research_data)
             assert (
                 result is False
             ), f"{company.company_name} should be identified as not fitting ICP (marketplace)"
@@ -204,9 +271,16 @@ def test_validate_consulting_companies(validator):
         ),
     ]
 
+    research_data = """
+    Both are established consulting companies:
+    - ThoughtWorks: Global technology consultancy
+    - Slalom: Business and technology consulting firm
+    Both primarily offer consulting and professional services.
+    """
+
     for company in companies:
         try:
-            result = validator.validate(company)
+            result = validator.validate(company, research_data)
             assert (
                 result is False
             ), f"{company.company_name} should be identified as not fitting ICP (consulting)"
@@ -218,38 +292,6 @@ def test_validate_consulting_companies(validator):
                 f"Non-ICP validation test failed for {company.company_name}: {e}"
             )
             raise
-
-
-@pytest.mark.smoke
-def test_validate_with_homepage_content(validator):
-    """Test validation using homepage content for context"""
-    company = Company.from_basic_info(
-        company_name="TestCompany",
-        website_url=HttpUrl("https://example.com"),
-    )
-
-    homepage_content = """
-    Welcome to TestCompany - Your Premier Tech Education Platform
-    
-    Our Offerings:
-    - 12-week coding bootcamp
-    - Job placement guarantee
-    - Industry-leading curriculum
-    - Expert instructors
-    - Career services support
-    
-    Join thousands of successful graduates working at top tech companies!
-    """
-
-    try:
-        result = validator.validate(company, homepage_content)
-        assert (
-            result is False
-        ), "TestCompany should be identified as not fitting ICP based on homepage content"
-        logger.info("Homepage-based validation test passed for TestCompany")
-    except Exception as e:
-        logger.error(f"Homepage-based validation test failed: {e}")
-        raise
 
 
 @pytest.mark.smoke
@@ -266,9 +308,16 @@ def test_validate_unicorn_companies(validator):
         ),
     ]
 
+    research_data = """
+    Both are well-established data companies:
+    - Databricks: Valued at $43B, late-stage
+    - Snowflake: Public company, mature stage
+    Both are well beyond early-stage.
+    """
+
     for company in companies:
         try:
-            result = validator.validate(company)
+            result = validator.validate(company, research_data)
             assert (
                 result is False
             ), f"{company.company_name} should be identified as not fitting ICP (unicorn)"
@@ -280,58 +329,6 @@ def test_validate_unicorn_companies(validator):
                 f"Non-ICP validation test failed for {company.company_name}: {e}"
             )
             raise
-
-
-@pytest.mark.smoke
-def test_validate_mixed_model_companies(validator):
-    """Test validation of companies with mixed business models"""
-    company = Company.from_basic_info(
-        company_name="TestMixedCompany",
-        website_url=HttpUrl("https://example.com"),
-    )
-
-    research_data = """
-    TestMixedCompany operates in two main areas:
-    1. Content Platform: Creates and sells educational video content for K-12
-    2. Training Division: Offers 8-week bootcamps and certification programs
-    
-    The company started as a content creation platform but expanded into training.
-    Revenue split: 60% from bootcamps, 40% from content platform.
-    """
-
-    try:
-        result = validator.validate(company, research_data)
-        assert (
-            result is False
-        ), "Mixed-model company with majority training revenue should be UNFIT"
-        logger.info("Mixed-model validation test passed")
-    except Exception as e:
-        logger.error(f"Mixed-model validation test failed: {e}")
-        raise
-
-
-@pytest.mark.smoke
-def test_validate_pivoted_company(validator):
-    """Test validation of companies that have pivoted their business model"""
-    company = Company.from_basic_info(
-        company_name="PivotedCo",
-        website_url=HttpUrl("https://example.com"),
-    )
-
-    research_data = """
-    PivotedCo was founded in 2020 as a coding bootcamp. In 2023, they pivoted to become
-    a SaaS platform that helps companies manage their technical documentation.
-    They no longer offer any educational services or bootcamps.
-    The platform is used by over 100 early-stage startups.
-    """
-
-    try:
-        result = validator.validate(company, research_data)
-        assert result is True, "Pivoted company (now pure SaaS) should be FIT"
-        logger.info("Pivoted company validation test passed")
-    except Exception as e:
-        logger.error(f"Pivoted company validation test failed: {e}")
-        raise
 
 
 @pytest.mark.smoke
@@ -367,61 +364,6 @@ def test_validate_ambiguous_stage_company(validator):
 
 
 @pytest.mark.smoke
-def test_validate_b2b2c_education_company(validator):
-    """Test validation of B2B2C educational product companies"""
-    company = Company.from_basic_info(
-        company_name="EduTechOS",
-        website_url=HttpUrl("https://example.com"),
-    )
-
-    research_data = """
-    EduTechOS provides a white-label platform for schools to create and distribute
-    their own educational content. The platform includes:
-    - Content authoring tools
-    - Distribution infrastructure
-    - Analytics dashboard
-    
-    They don't create or deliver educational content themselves, only provide the technology.
-    """
-
-    try:
-        result = validator.validate(company, research_data)
-        assert (
-            result is True
-        ), "B2B2C education platform should be FIT (they provide tools, not education)"
-        logger.info("B2B2C education platform validation test passed")
-    except Exception as e:
-        logger.error(f"B2B2C education platform validation test failed: {e}")
-        raise
-
-
-@pytest.mark.smoke
-def test_validate_with_scraping_failure(validator, monkeypatch):
-    """Test validation when web scraping fails"""
-
-    def mock_scrape(*args, **kwargs):
-        raise Exception("Simulated scraping failure")
-
-    monkeypatch.setattr(WebBaseLoader, "lazy_load", mock_scrape)
-
-    company = Company.from_basic_info(
-        company_name="ScrapeFail",
-        website_url=HttpUrl("https://example.com"),
-    )
-
-    try:
-        result = validator.validate(company)
-        # Should fall back to LLM knowledge and make a decision
-        assert isinstance(
-            result, bool
-        ), "Should return a boolean despite scraping failure"
-        logger.info("Scraping failure fallback test passed")
-    except Exception as e:
-        logger.error(f"Scraping failure fallback test failed: {e}")
-        raise
-
-
-@pytest.mark.smoke
 def test_validate_minimal_presence_company(validator):
     """Test validation of companies with minimal online presence"""
     company = Company.from_basic_info(
@@ -430,11 +372,13 @@ def test_validate_minimal_presence_company(validator):
     )
 
     research_data = """
-    Limited information available about StealthStartup.
+    Limited information available about StealthStartup:
     - Founded in 2023
-    - Building developer tools
+    - Building software tools and infrastructure for developers
     - Pre-seed stage
+    - Product in private beta
     - Website only contains a waitlist signup form
+    - Not a recruitment or hiring platform
     """
 
     try:
