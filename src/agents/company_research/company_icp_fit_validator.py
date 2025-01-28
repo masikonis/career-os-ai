@@ -27,9 +27,15 @@ class CompanyICPFitValidator:
 
         Company Stage Guidelines:
         - Pre-seed to Seed stage is FIT
-        - Pre-Series A can be FIT if still operating like a seed-stage company
-        - Early-stage companies with limited information but clear product focus are FIT
-        - Consider operational scale and market position, not just funding amount
+        - Pre-Series A is FIT if company maintains seed-stage operations
+        - Large seed funding alone does NOT make a company UNFIT
+        - Evaluate based on operational maturity, not funding size
+        - Key indicators of seed-stage operations:
+          * Product still in early development/growth
+          * Focus on product and market fit
+          * Limited go-to-market operations
+          * Team under 50 people
+          * Revenue under $5M ARR
 
         You MUST respond 'UNFIT' if the company primarily does ANY of these:
         1. Education/Training Services:
@@ -53,6 +59,8 @@ class CompanyICPFitValidator:
            - Pure consulting/services businesses
            - Traditional/legacy businesses
            - Pure marketplace without own product
+           - Hybrid models where marketplace revenue > 50%
+           NOTE: Companies are UNFIT if marketplace fees are the primary revenue source
 
         IMPORTANT DISTINCTIONS:
         - A company that CREATES tools FOR developers = FIT
@@ -62,6 +70,8 @@ class CompanyICPFitValidator:
         - A company that provides SOFTWARE TOOLS = FIT
         - A company that provides SERVICES = UNFIT
         - A pre-seed/seed company with limited info but clear product focus = FIT
+        - A company with >50% marketplace revenue = UNFIT even with some SaaS revenue
+        - A company with large seed funding but seed-stage operations = FIT
 
         Response (FIT/UNFIT):"""
 

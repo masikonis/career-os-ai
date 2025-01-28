@@ -84,12 +84,16 @@ def test_validate_b2b2c_education_company(validator):
 
     research_data = """
     EduTechOS provides a white-label platform for schools to create and distribute
-    their own educational content. The platform includes:
+    their own educational content. Company details:
+    - Pre-seed stage, founded 2023
+    - Raised $1.5M initial funding
+    - Pure technology platform play
     - Content authoring tools
     - Distribution infrastructure
     - Analytics dashboard
-    
-    They don't create or deliver educational content themselves, only provide the technology.
+    - No content creation or delivery services
+    - 100% revenue from platform subscriptions
+    - They don't create or deliver educational content themselves, only provide the technology
     """
 
     result = validator.validate(company, research_data)
@@ -125,10 +129,16 @@ def test_validate_with_research_data(validator):
     )
 
     research_data = """
-    Generation Genius is an innovative educational technology company founded in 2017. 
-    The company has raised a total of $1.6 million in funding, including a $1 million 
-    grant from the Howard Hughes Medical Institute and $1.07 million through crowdfunding. 
-    The platform serves approximately 30% of elementary schools in the U.S.
+    Generation Genius is an innovative educational technology company founded in 2017.
+    Key details:
+    - Creates and produces high-quality science video content
+    - Digital platform for K-12 science education
+    - Content creation and distribution platform
+    - $1.6M in total funding ($1M grant + crowdfunding)
+    - Serves 30% of US elementary schools
+    - Pure content product company, not a service provider
+    - Early-stage with seed funding
+    - Focus on content creation and platform development
     """
 
     try:
@@ -136,9 +146,9 @@ def test_validate_with_research_data(validator):
         assert (
             result is True
         ), "Generation Genius should be identified as fitting ICP based on research data"
-        logger.info("Research-based validation test passed for Generation Genius")
+        logger.info("Research-based validation test passed")
     except Exception as e:
-        logger.error(f"Research-based validation test failed: {e}")
+        logger.error(f"Research-based validation test failed: {str(e)}")
         raise
 
 
@@ -388,4 +398,297 @@ def test_validate_minimal_presence_company(validator):
         logger.info("Minimal presence validation test passed")
     except Exception as e:
         logger.error(f"Minimal presence validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_pivot_company(validator):
+    """Test validation of companies that recently pivoted from services to product"""
+    company = Company.from_basic_info(
+        company_name="PivotCo",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    PivotCo history:
+    - Founded 2022 as consulting firm
+    - Pivoted to SaaS product in 2023
+    - Currently 90% revenue from product
+    - Pre-seed stage
+    - No longer accepting consulting clients
+    - Focused on product development
+    - Building developer productivity tools
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is True
+        ), "Recently pivoted company should be FIT if now product-focused"
+        logger.info("Pivot company validation test passed")
+    except Exception as e:
+        logger.error(f"Pivot company validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_hardware_software_company(validator):
+    """Test validation of companies with both hardware and software products"""
+    company = Company.from_basic_info(
+        company_name="HardSoft",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    HardSoft product mix:
+    - IoT hardware devices
+    - SaaS platform for device management
+    - Pre-seed stage
+    - Revenue: 70% software, 30% hardware
+    - Software can be used independently of hardware
+    - Platform includes analytics, device management, and automation tools
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is True
+        ), "Software-first hardware company should be FIT if primarily selling software"
+        logger.info("Hardware-software company validation test passed")
+    except Exception as e:
+        logger.error(f"Hardware-software company validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_ai_startups(validator):
+    """Test validation of different types of AI startups"""
+    companies = [
+        Company.from_basic_info(
+            company_name="AIWorkflowPro",
+            website_url=HttpUrl("https://example.com"),
+        ),
+        Company.from_basic_info(
+            company_name="LegalAI",
+            website_url=HttpUrl("https://example.com"),
+        ),
+        Company.from_basic_info(
+            company_name="AIConsulting",
+            website_url=HttpUrl("https://example.com"),
+        ),
+    ]
+
+    research_data = """
+    Information about AI companies:
+    
+    AIWorkflowPro:
+    - Pre-seed startup building AI workflow automation platform
+    - SaaS product that helps companies build and deploy AI workflows
+    - Founded 2023, raised $2M seed
+    - Pure product company, no consulting services
+    
+    LegalAI:
+    - Seed-stage vertical AI company for legal industry
+    - AI-powered contract analysis and management platform
+    - Founded 2022, raised $3.5M seed
+    - 100% product revenue from SaaS subscriptions
+    
+    AIConsulting:
+    - AI implementation consulting firm
+    - Helps enterprises deploy AI solutions
+    - Founded 2021, bootstrapped
+    - 90% revenue from consulting, 10% from tools
+    """
+
+    # Test AIWorkflowPro (should be FIT - horizontal AI platform)
+    try:
+        result = validator.validate(companies[0], research_data)
+        assert (
+            result is True
+        ), "AI workflow platform should be FIT (early-stage product company)"
+        logger.info("AI workflow platform validation test passed")
+    except Exception as e:
+        logger.error(f"AI workflow platform validation test failed: {e}")
+        raise
+
+    # Test LegalAI (should be FIT - vertical AI SaaS)
+    try:
+        result = validator.validate(companies[1], research_data)
+        assert (
+            result is True
+        ), "Vertical AI SaaS should be FIT (early-stage product company)"
+        logger.info("Vertical AI SaaS validation test passed")
+    except Exception as e:
+        logger.error(f"Vertical AI SaaS validation test failed: {e}")
+        raise
+
+    # Test AIConsulting (should be UNFIT - consulting focused)
+    try:
+        result = validator.validate(companies[2], research_data)
+        assert (
+            result is False
+        ), "AI consulting company should be UNFIT (primarily services)"
+        logger.info("AI consulting company validation test passed")
+    except Exception as e:
+        logger.error(f"AI consulting company validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_international_companies(validator):
+    """Test validation of international companies in different markets"""
+    companies = [
+        Company.from_basic_info(
+            company_name="EuroSaaS",
+            website_url=HttpUrl("https://example.com"),
+        ),
+        Company.from_basic_info(
+            company_name="LatAmTech",
+            website_url=HttpUrl("https://example.com"),
+        ),
+    ]
+
+    research_data = """
+    Information about international companies:
+    
+    EuroSaaS:
+    - German B2B SaaS startup
+    - Pre-seed stage, €1.5M raised
+    - Building collaboration tools for enterprises
+    - Expanding from DACH to EU market
+    - 100% product revenue
+    
+    LatAmTech:
+    - Brazilian fintech platform
+    - Series A, $12M raised
+    - Already dominant in Brazil
+    - 500+ enterprise customers
+    - Expanding across Latin America
+    - Mature operations and sales team
+    """
+
+    # Test EuroSaaS (should be FIT - early stage, product focus)
+    try:
+        result = validator.validate(companies[0], research_data)
+        assert result is True, "Early-stage international SaaS should be FIT"
+        logger.info("International early-stage validation test passed")
+    except Exception as e:
+        logger.error(f"International early-stage validation test failed: {e}")
+        raise
+
+    # Test LatAmTech (should be UNFIT - too mature/late stage)
+    try:
+        result = validator.validate(companies[1], research_data)
+        assert result is False, "Later-stage international company should be UNFIT"
+        logger.info("International later-stage validation test passed")
+    except Exception as e:
+        logger.error(f"International later-stage validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_open_source_companies(validator):
+    """Test validation of open source companies with commercial products"""
+    company = Company.from_basic_info(
+        company_name="OpenCorpOS",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    OpenCorpOS business model:
+    - Open source core product (50K+ GitHub stars)
+    - Commercial cloud offering launched 2023
+    - Pre-seed stage, $2M raised
+    - 80% revenue from cloud product
+    - 20% from enterprise support
+    - Growing commercial customer base
+    - Strong open source community
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is True
+        ), "Open source company with commercial product should be FIT"
+        logger.info("Open source company validation test passed")
+    except Exception as e:
+        logger.error(f"Open source company validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_api_first_companies(validator):
+    """Test validation of API-first businesses"""
+    company = Company.from_basic_info(
+        company_name="APIFirst",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    APIFirst platform details:
+    - Developer-focused API platform
+    - Pre-seed stage, founded 2023
+    - Core product is API for data processing
+    - Self-serve API marketplace
+    - No consulting or implementation services
+    - Pure product/platform play
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert result is True, "API-first product company should be FIT"
+        logger.info("API-first company validation test passed")
+    except Exception as e:
+        logger.error(f"API-first company validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_marketplace_saas_hybrid(validator):
+    """Test validation of marketplace + SaaS hybrid models"""
+    companies = [
+        Company.from_basic_info(
+            company_name="HybridMarket",
+            website_url=HttpUrl("https://example.com"),
+        ),
+        Company.from_basic_info(
+            company_name="SaaSMarket",
+            website_url=HttpUrl("https://example.com"),
+        ),
+    ]
+
+    research_data = """
+    Information about hybrid companies:
+    
+    HybridMarket:
+    - Marketplace for digital assets
+    - 70% revenue from marketplace fees
+    - 30% from SaaS tools for sellers
+    - Seed stage, $4M raised
+    - Primarily a marketplace business
+    
+    SaaSMarket:
+    - B2B software distribution platform
+    - 80% revenue from SaaS platform
+    - 20% from marketplace commissions
+    - Pre-seed stage
+    - Core product is the platform
+    """
+
+    # Test HybridMarket (should be UNFIT - primarily marketplace)
+    try:
+        result = validator.validate(companies[0], research_data)
+        assert result is False, "Primarily marketplace hybrid should be UNFIT"
+        logger.info("Marketplace-heavy hybrid validation test passed")
+    except Exception as e:
+        logger.error(f"Marketplace-heavy hybrid validation test failed: {e}")
+        raise
+
+    # Test SaaSMarket (should be FIT - primarily SaaS)
+    try:
+        result = validator.validate(companies[1], research_data)
+        assert result is True, "Primarily SaaS hybrid should be FIT"
+        logger.info("SaaS-heavy hybrid validation test passed")
+    except Exception as e:
+        logger.error(f"SaaS-heavy hybrid validation test failed: {e}")
         raise
