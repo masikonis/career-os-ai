@@ -52,46 +52,45 @@ class CompanyWebResearcher:
                 )
                 home_page_summary = self.summarize_text(company_name, relevant_text)
 
-            # Step 2: Search for Company Name
-            company_query = f"{company_name} company"
-            company_search_results = self.web_search.search(company_query)[
+            # Step 2: Multi-purpose search queries
+            # "startup" search - covers stage, funding, founding year, founders
+            startup_query = f"{company_name} startup"
+            startup_search_results = self.web_search.search(startup_query)[
                 : self.num_urls
             ]
-            company_related_urls = [
-                result["url"] for result in company_search_results if "url" in result
+            startup_related_urls = [
+                result["url"] for result in startup_search_results if "url" in result
             ]
 
-            # Step 3: Search for Funding Information
-            funding_query = f"{company_name} funding"
-            funding_search_results = self.web_search.search(funding_query)[
+            # "product" search - covers business model, revenue model, industry
+            product_query = f"{company_name} product"
+            product_search_results = self.web_search.search(product_query)[
                 : self.num_urls
             ]
-            funding_related_urls = [
-                result["url"] for result in funding_search_results if "url" in result
+            product_related_urls = [
+                result["url"] for result in product_search_results if "url" in result
             ]
 
-            # Step 4: Search for Team Information
+            # "team" search - covers team size, founders, location
             team_query = f"{company_name} team"
             team_search_results = self.web_search.search(team_query)[: self.num_urls]
             team_related_urls = [
                 result["url"] for result in team_search_results if "url" in result
             ]
 
-            # Step 5: Search for Sentiment Analysis
-            sentiment_query = f"{company_name} reviews"
-            sentiment_search_results = self.web_search.search(sentiment_query)[
-                : self.num_urls
-            ]
-            sentiment_related_urls = [
-                result["url"] for result in sentiment_search_results if "url" in result
+            # "about" search - covers company description, location, founding info
+            about_query = f"{company_name} about"
+            about_search_results = self.web_search.search(about_query)[: self.num_urls]
+            about_related_urls = [
+                result["url"] for result in about_search_results if "url" in result
             ]
 
             # Aggregate all URLs
             all_related_urls = (
-                company_related_urls
-                + funding_related_urls
+                startup_related_urls
+                + product_related_urls
                 + team_related_urls
-                + sentiment_related_urls
+                + about_related_urls
             )
 
             # Deduplicate URLs
@@ -121,8 +120,9 @@ class CompanyWebResearcher:
             if home_page_summary:
                 doc_summaries.append(home_page_summary)
 
-            # Create initial summaries without ICP data
+            # Create initial summaries
             summaries = {
+                "home_page_summary": home_page_summary,
                 "comprehensive_summary": self.create_comprehensive_summary(
                     company_name, doc_summaries
                 ),
@@ -388,6 +388,9 @@ class CompanyWebResearcher:
         """Generate ICP-focused research data from existing summaries."""
         try:
             combined_text = (
+                "HOME PAGE SUMMARY (Primary Source):\n"
+                f"{summaries.get('home_page_summary', 'No home page data available')}\n\n"
+                "Additional Research:\n"
                 f"Comprehensive: {summaries['comprehensive_summary']}\n"
                 f"Company: {summaries['company_summary']}\n"
                 f"Funding: {summaries['funding_summary']}\n"
@@ -398,48 +401,53 @@ class CompanyWebResearcher:
 
             prompt = (
                 f"Based on the following information about {company_name}, create a focused research summary "
-                "that exactly follows this format:\n\n"
+                "that MUST follow this EXACT format:\n\n"
                 f"{company_name} business details:\n"
-                "- [Stage] stage, [Funding Status]\n"
+                "- [Stage] stage, [Verified Funding Status]\n"
                 "- [Product Type] (e.g., SaaS platform, software product)\n"
                 "- Revenue split: [e.g., '100% SaaS product (no services)', '80% product, 20% services']\n"
                 "- Team size: [Size Range or Specific Number]\n"
-                "- Product status: [Development Stage/Traction]\n"
-                "- Additional relevant metrics: [Users/Customers/Growth]\n\n"
+                "- Product status: [Development Stage/Launch Date/Traction]\n"
+                "- Additional metrics: [Verified Users/Customers/Growth]\n\n"
                 "Example 1:\n"
-                "SlideSpeak business details:\n"
-                "- Pre-seed stage, no external funding\n"
-                "- Pure SaaS platform for presentations\n"
+                "DataFlow business details:\n"
+                "- Pre-seed stage, no verified external funding data\n"
+                "- Pure SaaS data integration platform\n"
                 "- 100% SaaS product revenue (no services or marketplace fees)\n"
-                "- Team size: 5-10 employees\n"
-                "- Product in market with active users\n"
-                "- Additional metrics: 10k monthly active users\n\n"
+                "- Team size: 5-10 employees (based on LinkedIn)\n"
+                "- Product launched Q3 2023\n"
+                "- Additional metrics: Early user adoption (specific numbers unverified)\n\n"
                 "Example 2:\n"
-                "Yooli business details:\n"
-                "- Seed stage, $2M raised in 2022\n"
-                "- B2B feedback management platform\n"
+                "CloudStack business details:\n"
+                "- Seed stage, $2M funding announced on TechCrunch (Jan 2022)\n"
+                "- B2B infrastructure automation platform\n"
                 "- 90% SaaS product, 10% professional services\n"
-                "- Team size: 15-20 people\n"
-                "- Product launched with paying customers\n"
-                "- Additional metrics: 100+ enterprise clients\n\n"
+                "- Team size: 15-20 people (company careers page)\n"
+                "- Product in market since 2022\n"
+                "- Additional metrics: 100+ enterprise clients (verified on case studies)\n\n"
                 f"Now, create a similar summary for {company_name} using this information:\n\n"
                 f"{combined_text}\n\n"
                 "IMPORTANT:\n"
-                "1. Always include stage and funding status\n"
-                "2. Be explicit about revenue sources - specify SaaS, services, marketplace fees\n"
-                "3. Provide team size range if exact number unknown\n"
-                "4. Include product status and traction metrics\n"
-                "5. If any information is not available, use clear language like 'no public funding data' or 'team size not disclosed'\n"
-                "6. Keep each bullet point focused and factual\n"
-                "7. Always clarify if there are no services or marketplace revenue"
+                "1. You MUST start with exactly '{company_name} business details:'\n"
+                "2. You MUST use bullet points (-) for each line\n"
+                "3. Use home page data as primary source of truth\n"
+                "4. Only include information that clearly refers to this specific company\n"
+                "5. For funding data, only include verified information with sources\n"
+                "6. Distinguish between verified and claimed/unverified metrics\n"
+                "7. Include sources for key claims (e.g., 'based on LinkedIn', 'from official blog')\n"
+                "8. If data conflicts between sources, prefer home page or official sources\n"
+                "9. Be explicit about revenue model and any services offered\n"
+                "10. If information is unclear or unverified, state this explicitly\n"
+                "11. For metrics, indicate source and date when available"
             )
 
             messages = [
                 SystemMessage(
                     content=(
                         "You are an expert at analyzing early-stage companies and extracting key business model "
-                        "information. Focus on facts that help determine if a company is an early-stage "
-                        "product company vs. a service business or later-stage company."
+                        "information. You are very careful to avoid mixing up companies with similar names "
+                        "and always verify information against the company's own website data. You clearly "
+                        "distinguish between verified and unverified information in your analysis."
                     )
                 ),
                 HumanMessage(content=prompt),
