@@ -388,9 +388,6 @@ class CompanyWebResearcher:
         """Generate ICP-focused research data from existing summaries."""
         try:
             combined_text = (
-                "HOME PAGE SUMMARY (Primary Source):\n"
-                f"{summaries.get('home_page_summary', 'No home page data available')}\n\n"
-                "Additional Research:\n"
                 f"Comprehensive: {summaries['comprehensive_summary']}\n"
                 f"Company: {summaries['company_summary']}\n"
                 f"Funding: {summaries['funding_summary']}\n"
@@ -430,24 +427,23 @@ class CompanyWebResearcher:
                 "IMPORTANT:\n"
                 "1. You MUST start with exactly '{company_name} business details:'\n"
                 "2. You MUST use bullet points (-) for each line\n"
-                "3. Use home page data as primary source of truth\n"
-                "4. Only include information that clearly refers to this specific company\n"
-                "5. For funding data, only include verified information with sources\n"
-                "6. Distinguish between verified and claimed/unverified metrics\n"
-                "7. Include sources for key claims (e.g., 'based on LinkedIn', 'from official blog')\n"
-                "8. If data conflicts between sources, prefer home page or official sources\n"
-                "9. Be explicit about revenue model and any services offered\n"
-                "10. If information is unclear or unverified, state this explicitly\n"
-                "11. For metrics, indicate source and date when available"
+                "3. Only include information that appears in multiple reliable sources\n"
+                "4. For funding data, only include verified information with sources\n"
+                "5. Distinguish between verified and claimed/unverified metrics\n"
+                "6. Include sources for key claims (e.g., 'based on LinkedIn', 'from TechCrunch')\n"
+                "7. Be explicit about revenue model and any services offered\n"
+                "8. If information is unclear or unverified, state this explicitly\n"
+                "9. For metrics, indicate source and date when available\n"
+                "10. If different sources conflict, prefer the most reliable source\n"
+                "11. Marketing claims should be labeled as 'claimed' unless independently verified"
             )
 
             messages = [
                 SystemMessage(
                     content=(
                         "You are an expert at analyzing early-stage companies and extracting key business model "
-                        "information. You are very careful to avoid mixing up companies with similar names "
-                        "and always verify information against the company's own website data. You clearly "
-                        "distinguish between verified and unverified information in your analysis."
+                        "information. You carefully evaluate source reliability and clearly distinguish "
+                        "between verified facts and marketing claims in your analysis."
                     )
                 ),
                 HumanMessage(content=prompt),
