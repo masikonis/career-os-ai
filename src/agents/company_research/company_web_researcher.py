@@ -121,7 +121,7 @@ class CompanyWebResearcher:
             if home_page_summary:
                 doc_summaries.append(home_page_summary)
 
-            # Create separate summaries for different aspects
+            # Create initial summaries without ICP data
             summaries = {
                 "comprehensive_summary": self.create_comprehensive_summary(
                     company_name, doc_summaries
@@ -134,6 +134,11 @@ class CompanyWebResearcher:
                 ),
                 "team_summary": self.create_team_summary(company_name, doc_summaries),
             }
+
+            # Add ICP research data after other summaries are created
+            summaries["icp_research_data"] = self.generate_icp_research_data(
+                company_name, summaries
+            )
 
             logger.info("Completed research and summarization.")
             logger.debug(summaries)
@@ -377,4 +382,78 @@ class CompanyWebResearcher:
             )
         except Exception as e:
             logger.error(f"Error creating team summary: {str(e)}")
+            raise
+
+    def generate_icp_research_data(self, company_name: str, summaries: dict) -> str:
+        """Generate ICP-focused research data from existing summaries."""
+        try:
+            combined_text = (
+                f"Comprehensive: {summaries['comprehensive_summary']}\n"
+                f"Company: {summaries['company_summary']}\n"
+                f"Funding: {summaries['funding_summary']}\n"
+                f"Team: {summaries['team_summary']}"
+            )
+
+            logger.debug(f"Input data for ICP research:\n{combined_text}")
+
+            prompt = (
+                f"Based on the following information about {company_name}, create a focused research summary "
+                "that exactly follows this format:\n\n"
+                f"{company_name} business details:\n"
+                "- [Stage] stage, [Funding Status]\n"
+                "- [Product Type] (e.g., SaaS platform, software product)\n"
+                "- Revenue split: [e.g., '100% SaaS product (no services)', '80% product, 20% services']\n"
+                "- Team size: [Size Range or Specific Number]\n"
+                "- Product status: [Development Stage/Traction]\n"
+                "- Additional relevant metrics: [Users/Customers/Growth]\n\n"
+                "Example 1:\n"
+                "SlideSpeak business details:\n"
+                "- Pre-seed stage, no external funding\n"
+                "- Pure SaaS platform for presentations\n"
+                "- 100% SaaS product revenue (no services or marketplace fees)\n"
+                "- Team size: 5-10 employees\n"
+                "- Product in market with active users\n"
+                "- Additional metrics: 10k monthly active users\n\n"
+                "Example 2:\n"
+                "Yooli business details:\n"
+                "- Seed stage, $2M raised in 2022\n"
+                "- B2B feedback management platform\n"
+                "- 90% SaaS product, 10% professional services\n"
+                "- Team size: 15-20 people\n"
+                "- Product launched with paying customers\n"
+                "- Additional metrics: 100+ enterprise clients\n\n"
+                f"Now, create a similar summary for {company_name} using this information:\n\n"
+                f"{combined_text}\n\n"
+                "IMPORTANT:\n"
+                "1. Always include stage and funding status\n"
+                "2. Be explicit about revenue sources - specify SaaS, services, marketplace fees\n"
+                "3. Provide team size range if exact number unknown\n"
+                "4. Include product status and traction metrics\n"
+                "5. If any information is not available, use clear language like 'no public funding data' or 'team size not disclosed'\n"
+                "6. Keep each bullet point focused and factual\n"
+                "7. Always clarify if there are no services or marketplace revenue"
+            )
+
+            messages = [
+                SystemMessage(
+                    content=(
+                        "You are an expert at analyzing early-stage companies and extracting key business model "
+                        "information. Focus on facts that help determine if a company is an early-stage "
+                        "product company vs. a service business or later-stage company."
+                    )
+                ),
+                HumanMessage(content=prompt),
+            ]
+
+            icp_research_data = self.llm.generate_response(
+                messages, model_type=self.model_type, temperature=self.temperature
+            )
+
+            logger.info(f"Generated ICP research data for {company_name}:")
+            logger.info(icp_research_data)
+
+            return icp_research_data
+
+        except Exception as e:
+            logger.error(f"Error generating ICP research data: {str(e)}")
             raise

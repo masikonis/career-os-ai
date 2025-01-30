@@ -34,6 +34,7 @@ def test_company_web_researcher_smoke():
             "company_summary",
             "funding_summary",
             "team_summary",
+            "icp_research_data",
         ]
         for summary_type in expected_summaries:
             assert summary_type in result, f"Missing {summary_type} in result"
@@ -43,6 +44,19 @@ def test_company_web_researcher_smoke():
             assert (
                 len(result[summary_type].strip()) > 0
             ), f"{summary_type} should not be empty"
+
+        # Check for key ICP information components
+        icp_data = result["icp_research_data"].lower()
+        required_elements = [
+            "stage",
+            "product",
+            "revenue",
+            "team",
+        ]
+        for element in required_elements:
+            assert (
+                element in icp_data
+            ), f"ICP research data should contain information about {element}"
 
         logger.info("CompanyWebResearcher smoke test passed")
 
