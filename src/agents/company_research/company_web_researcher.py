@@ -427,15 +427,20 @@ class CompanyWebResearcher:
                 "IMPORTANT:\n"
                 "1. You MUST start with exactly '{company_name} business details:'\n"
                 "2. You MUST use bullet points (-) for each line\n"
-                "3. Only include information that appears in multiple reliable sources\n"
-                "4. For funding data, only include verified information with sources\n"
-                "5. Distinguish between verified and claimed/unverified metrics\n"
-                "6. Include sources for key claims (e.g., 'based on LinkedIn', 'from TechCrunch')\n"
-                "7. Be explicit about revenue model and any services offered\n"
-                "8. If information is unclear or unverified, state this explicitly\n"
-                "9. For metrics, indicate source and date when available\n"
-                "10. If different sources conflict, prefer the most reliable source\n"
-                "11. Marketing claims should be labeled as 'claimed' unless independently verified"
+                "3. For ALL metrics and claims:\n"
+                "   - Label source type: (verified: [source]), (reported by: [source]), or (company claimed)\n"
+                "   - Include date of claim when available\n"
+                "   - If multiple sources conflict, list all versions\n"
+                "4. For funding data:\n"
+                "   - Only mark as verified if from TechCrunch, Crunchbase, or official announcements\n"
+                "   - Otherwise state as 'reported funding'\n"
+                "5. For location and team size:\n"
+                "   - List all reported locations with sources\n"
+                "   - Include date for team size claims\n"
+                "6. Rank confidence in each claim as:\n"
+                "   - (High: verified by multiple reliable sources)\n"
+                "   - (Medium: single reliable source)\n"
+                "   - (Low: unverified or marketing claims)\n"
             )
 
             messages = [
@@ -449,8 +454,11 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
 
+            # Use advanced model specifically for ICP research generation
             icp_research_data = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type="advanced",  # Force advanced model here
+                temperature=self.temperature,
             )
 
             logger.info(f"Generated ICP research data for {company_name}:")
