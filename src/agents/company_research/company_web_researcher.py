@@ -437,10 +437,8 @@ class CompanyWebResearcher:
                 "5. For location and team size:\n"
                 "   - List all reported locations with sources\n"
                 "   - Include date for team size claims\n"
-                "6. Rank confidence in each claim as:\n"
-                "   - (High: verified by multiple reliable sources)\n"
-                "   - (Medium: single reliable source)\n"
-                "   - (Low: unverified or marketing claims)\n"
+                "6. Do NOT include a separate confidence levels section\n"
+                "7. Include source attribution directly in each bullet point\n"
             )
 
             messages = [
@@ -454,7 +452,6 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
 
-            # Use advanced model specifically for ICP research generation
             icp_research_data = self.llm.generate_response(
                 messages,
                 model_type="advanced",  # Force advanced model here
