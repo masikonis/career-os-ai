@@ -208,10 +208,17 @@ def test_validate_early_saas_companies(validator):
     ]
 
     research_data = """
-    All three companies are early-stage SaaS startups:
-    - SlideSpeak: Pre-seed stage presentation software, founded 2023
-    - Yooli: Seed stage customer feedback platform, founded 2022
-    - Subscript: Early-stage contract management software, founded 2021
+    SlideSpeak business details:
+    - Seed stage, $5 million funding (verified: TechCrunch, Series A round, 2023)
+    - AI-powered SaaS platform for presentation creation and management
+    - 100% SaaS product revenue (no services) (company claimed)
+    - Team size: 2-10 employees (reported by: LinkedIn, October 2023)
+    - Product launched in 2023 (company claimed)
+    - Additional metrics: Over 4 million files uploaded (company claimed, October 2023)
+    - Locations: San Antonio, Texas, and London (reported by: company website, October 2023)
+
+    Yooli: Seed stage customer feedback platform, founded 2022
+    Subscript: Early-stage contract management software, founded 2021
     All companies are focused on building software products, not services.
     """
 
@@ -221,9 +228,6 @@ def test_validate_early_saas_companies(validator):
             assert (
                 result is True
             ), f"{company.company_name} should be identified as fitting ICP (early SaaS)"
-            logger.info(
-                f"ICP validation test passed for {company.company_name} (early SaaS)"
-            )
         except Exception as e:
             logger.error(f"ICP validation test failed for {company.company_name}: {e}")
             raise
