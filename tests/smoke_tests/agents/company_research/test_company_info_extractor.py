@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
@@ -419,4 +421,121 @@ def test_extract_all_info_smoke():
 
     except Exception as e:
         logger.error(f"Comprehensive extraction test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_extract_all_info_with_real_data():
+    """Test all extraction methods with real research data from SlideSpeak."""
+    extractor = CompanyInfoExtractor()
+
+    # Real research data from web researcher
+    research_data = {
+        "comprehensive_summary": """SlideSpeak is an innovative AI-powered platform designed to enhance the creation, summarization, and interaction with presentations and documents, particularly focusing on PowerPoint files. Launched in August 2023, it leverages advanced ChatGPT technology to automate the generation of professional-quality slides from various document formats, including Word and PDFs, while also providing features for summarizing content and engaging in interactive Q&A sessions. The company, headquartered in London and Austin, operates with a small, fully remote team that emphasizes collaboration and creativity, fostering a supportive work culture. Despite its rapid growth, evidenced by over 4 million files uploaded, user feedback has been mixed, with an average rating of 3 out of 5 stars, highlighting both its efficiency and some technical issues. SlideSpeak is actively hiring to expand its team and improve its offerings, while also maintaining a commitment to data security and user privacy. Overall, SlideSpeak positions itself as a valuable tool for professionals, educators, and students seeking efficient solutions for presentation management.""",
+        "company_summary": """**SlideSpeak Company Summary**
+
+SlideSpeak is an AI-powered platform that enhances the creation, summarization, and interaction with presentations and documents, primarily targeting professionals, educators, and students. The company offers a robust API that streamlines the presentation workflow by enabling users to generate, update, and redesign PowerPoint presentations efficiently.
+
+**Core Offerings:**
+- **AI Presentation Generation**: Automatically creates visually appealing slides from various document formats, including PowerPoint, Word, and PDFs.
+- **Document Summarization**: Extracts key insights and generates concise summaries from lengthy documents.
+- **Interactive Q&A**: Users can engage with their presentations through a chat interface, asking questions and receiving real-time responses.
+- **Custom Templates and Multi-Format Support**: Allows for personalized branding and compatibility with multiple document types.
+
+**Value Proposition**: SlideSpeak's main value lies in its ability to save time and enhance productivity by automating the presentation creation process, allowing users to focus on content delivery rather than design mechanics. Its user-friendly interface makes it accessible to individuals with varying technical skills.
+
+**Target Market**: The platform primarily serves business professionals, educators, researchers, marketers, and students who require efficient and effective presentation solutions.
+
+In summary, SlideSpeak is positioned as a significant player in the presentation technology sector, leveraging AI to transform how users create and manage presentations while fostering a collaborative and innovative company culture.""",
+        "funding_summary": """**SlideSpeak Funding Summary**
+
+SlideSpeak is an AI-driven technology company focused on enhancing the presentation creation process. As of October 2023, the company has successfully raised a total of **$5 million** in funding through **two rounds**. The funding rounds include a **Seed round** and a **Series A round**, with participation from notable investors such as **Techstars**, **Y Combinator**, and **Sequoia Capital**.
+
+The company has demonstrated significant user engagement, with over **4 million files uploaded** to its platform, indicating strong demand for its innovative solutions. SlideSpeak operates with a small team and has a growing presence in the market, positioning itself as a key player in the presentation technology sector.
+
+Overall, SlideSpeak's funding history reflects a solid foundation for future growth and product development, leveraging its AI capabilities to transform how users create and manage presentations.""",
+        "team_summary": """**SlideSpeak Team Summary**
+
+SlideSpeak is an AI-driven technology company founded in 2022, headquartered in San Antonio, Texas, with additional operations in London and Austin, Texas. The company specializes in enhancing the presentation creation process through innovative software solutions, particularly focusing on AI-powered tools that streamline the development and management of presentations.
+
+The leadership team consists of a small, fully remote group of 2-10 employees, fostering a collaborative and friendly work culture. The team emphasizes teamwork and creativity, holding in-person meetups every three months to strengthen connections and enhance productivity. Currently, SlideSpeak is looking to expand its team by hiring a Full Stack Software Engineer with expertise in backend development.
+
+SlideSpeak's commitment to community engagement is evident through its active participation in developer forums and social media, where it shares insights on AI applications in presentations and gathers user feedback for product improvements. The company values innovation and aims to refine its AI tools to meet the evolving needs of its users in both business and academic settings.
+
+Overall, SlideSpeak's leadership is focused on creating a supportive work environment while driving the development of cutting-edge presentation technology, positioning the company for continued growth and success in the industry.""",
+    }
+
+    try:
+        # Test growth stage extraction
+        growth_stage = extractor.extract_growth_stage(research_data)
+        assert isinstance(growth_stage, CompanyGrowthStage)
+        assert growth_stage.growth_stage == GrowthStage.SEED
+        logger.info(
+            f"Growth Stage: {growth_stage.growth_stage} (Confidence: {growth_stage.confidence})"
+        )
+        logger.info(f"Growth Stage Reasoning: {growth_stage.reasoning}")
+
+        # Test founding year extraction
+        founding_year = extractor.extract_founding_year(research_data)
+        assert founding_year == 2022  # Updated based on team summary
+        logger.info(f"Founding Year: {founding_year}")
+
+        # Test location extraction
+        location = extractor.extract_location(research_data)
+        assert isinstance(location, CompanyLocation)
+        logger.info(f"Location: {location.city}, {location.state}, {location.country}")
+        assert (
+            "San Antonio" in location.city
+            or "London" in location.city
+            or "Austin" in location.city
+        )
+
+        # Test funding extraction
+        funding = extractor.extract_funding(research_data)
+        assert isinstance(funding, CompanyFunding)
+        assert funding.total_amount == 5.0
+        assert any(source.source == "Techstars" for source in funding.funding_sources)
+        assert any(
+            source.source == "Y Combinator" for source in funding.funding_sources
+        )
+        assert any(
+            source.source == "Sequoia Capital" for source in funding.funding_sources
+        )
+        logger.info(f"Funding: ${funding.total_amount}M")
+        logger.info(
+            f"Investors: {', '.join(source.source for source in funding.funding_sources)}"
+        )
+
+        # Test industry extraction
+        industry = extractor.extract_industry(research_data)
+        assert isinstance(industry, CompanyIndustry)
+        logger.info(f"Industry: {industry.primary_industry}")
+        logger.info(f"Verticals: {', '.join(industry.verticals)}")
+
+        # Test description creation
+        description = extractor.create_description(research_data)
+        assert isinstance(description, CompanyDescription)
+        logger.info(f"Description: {description.description}")
+
+        # Test all info extraction
+        all_info = extractor.extract_all_info(
+            research_data, company_url="https://slidespeak.co"
+        )
+
+        assert all_info is not None
+        assert isinstance(all_info, dict)
+        logger.info("Successfully extracted all company information")
+
+        # Create and log full company model
+        company = Company(
+            company_name="SlideSpeak", website_url="https://slidespeak.co", **all_info
+        )
+        logger.info("Full Company Model:")
+        # Format the flattened data as pretty JSON
+        flattened_data = company.flatten()
+        formatted_json = json.dumps(flattened_data, indent=2)
+        logger.info("\n" + formatted_json)
+
+    except Exception as e:
+        logger.error(f"Real data extraction test failed: {e}")
         raise

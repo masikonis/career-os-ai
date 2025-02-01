@@ -71,13 +71,20 @@ class CompanyInfoExtractor:
     def extract_founding_year(self, research_output: dict) -> Optional[int]:
         """Extract company founding year from research output"""
         try:
-            comprehensive_summary = research_output.get("comprehensive_summary", "")
+            # Combine all relevant summaries
+            all_text = f"""
+            Comprehensive Summary: {research_output.get('comprehensive_summary', '')}
+            Team Summary: {research_output.get('team_summary', '')}
+            Company Summary: {research_output.get('company_summary', '')}
+            """
+
             messages = [
                 HumanMessage(
-                    content=f"""Extract the founding year from the following company description. 
+                    content=f"""Extract the company's founding year (not launch year) from the following text. 
+                    Look for explicit mentions of 'founded in' or 'established in'.
                     Return the year as a number. If no founding year is mentioned, return null.
                     
-                    Text: {comprehensive_summary}
+                    Text: {all_text}
                     """
                 )
             ]
@@ -159,16 +166,29 @@ class CompanyInfoExtractor:
         try:
             comprehensive_summary = research_output.get("comprehensive_summary", "")
             messages = [
+                SystemMessage(
+                    content="""When classifying company industries, follow these principles:
+                    1. Primary Industry:
+                       - For software companies, be specific: 'AI Software', 'SaaS', 'Enterprise Software'
+                       - Combine core technologies if both are fundamental (e.g., 'AI Software/SaaS')
+                       - For non-software companies, use their operational industry
+                    
+                    2. Verticals:
+                       - List core product capabilities using simple, clear terms
+                       - Capitalize each vertical (e.g., 'Presentation Software')
+                       - Focus on main functionalities, not technical details
+                       - Use natural language with proper capitalization
+                       - Only include key capabilities proven in the source text
+                       - Limit to 2-3 most important verticals"""
+                ),
                 HumanMessage(
-                    content=f"""Extract the company's industry information from the following text.
-                    Identify:
-                    1. The primary industry (e.g., EdTech, FinTech, HealthTech)
-                    2. List of specific verticals or market segments (e.g., K-12 Education, Science Education)
-                    Be specific but concise with the classifications.
+                    content=f"""Based on this text, identify:
+                    1. The company's primary industry
+                    2. List of specific verticals based on proven capabilities
                     
                     Text: {comprehensive_summary}
                     """
-                )
+                ),
             ]
             response = self.llm.generate_structured_response(
                 messages,
@@ -235,18 +255,28 @@ class CompanyInfoExtractor:
     def extract_funding(self, research_output: dict) -> Optional[CompanyFunding]:
         """Extract company funding information from research output"""
         try:
-            comprehensive_summary = research_output.get("comprehensive_summary", "")
+            all_text = f"""
+            Funding Summary: {research_output.get('funding_summary', '')}
+            Comprehensive Summary: {research_output.get('comprehensive_summary', '')}
+            Company Summary: {research_output.get('company_summary', '')}
+            """
+
             messages = [
+                SystemMessage(
+                    content="""When extracting funding information:
+                    1. Only include information from verifiable sources (press releases, SEC filings, reliable news outlets)
+                    2. Distinguish between announced/confirmed funding and reported/rumored funding
+                    3. If source reliability is unclear, exclude the information"""
+                ),
                 HumanMessage(
-                    content=f"""Extract funding information from the following text.
-                    Include total funding amount (in millions), and list each funding source with its amount and type.
-                    For amounts, convert to millions (e.g., $1,000,000 = 1.0).
-                    If no funding information is found, return null for total_amount and an empty list for funding_sources.
-                    If an amount is not specified for a source, return null for that amount.
+                    content=f"""Extract the verified funding information from this text. Include:
+                    1. Total funding amount (in millions)
+                    2. Individual funding rounds with sources
+                    3. Only include information that appears to be from reliable sources
                     
-                    Text: {comprehensive_summary}
+                    Text: {all_text}
                     """
-                )
+                ),
             ]
             response = self.llm.generate_structured_response(
                 messages,

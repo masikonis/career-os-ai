@@ -394,8 +394,6 @@ class CompanyWebResearcher:
                 f"Team: {summaries['team_summary']}"
             )
 
-            logger.debug(f"Input data for ICP research:\n{combined_text}")
-
             prompt = (
                 f"Based on the following information about {company_name}, create a focused research summary "
                 "that MUST follow this EXACT format:\n\n"
