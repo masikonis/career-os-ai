@@ -47,6 +47,8 @@ def test_company_web_researcher_smoke():
 
         # Check for key ICP information components
         icp_data = result["icp_research_data"].lower()
+        logger.info("ICP Research Data: %s", result["icp_research_data"])
+
         required_elements = [
             "stage",
             "product",
