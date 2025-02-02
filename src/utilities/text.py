@@ -4,14 +4,7 @@ logger = get_logger(__name__)
 
 
 def sanitize_text(text: str) -> str:
-    """Clean and normalize text content by collapsing whitespace.
-
-    Args:
-        text: Input string to be sanitized
-
-    Returns:
-        Empty string if input is falsy, otherwise normalized string
-    """
+    """Clean and normalize text content by collapsing whitespace."""
     if not text:
         logger.debug("Received empty text in sanitize_text")
         return ""
@@ -24,14 +17,7 @@ def sanitize_text(text: str) -> str:
 
 
 def preserve_paragraphs(text: str) -> str:
-    """Preserve paragraph breaks while normalizing text content.
-
-    Args:
-        text: Input string with potential paragraph breaks
-
-    Returns:
-        String with preserved paragraph structure and normalized whitespace
-    """
+    """Preserve paragraph breaks while normalizing text content."""
     if not text:
         logger.debug("Received empty text in preserve_paragraphs")
         return ""
