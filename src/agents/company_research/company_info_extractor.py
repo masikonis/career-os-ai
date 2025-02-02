@@ -29,10 +29,6 @@ class CompanyInfoExtractor:
         "/join-us",
         "/join",
         "/career",
-        "/opportunities",
-        "/work-at",
-        "/employment",
-        "/hiring",
     ]
 
     def __init__(self, model_type: str = "basic", temperature: float = 0.0):
