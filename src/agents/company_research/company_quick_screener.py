@@ -11,8 +11,34 @@ class CompanyQuickScreener:
     def __init__(self):
         # Add domains to ignore (e.g., developer hiring platforms, irrelevant industries)
         self.ignored_domains = {
-            "lemon.io",  # Developer hiring platform
-            # Add more domains here as needed
+            "lemon.io",
+            "lumenalta.com",
+            "x-team.com",
+            "contra.com",
+            "toptal.com",
+            "testgorilla.com",
+            "remoteyear.com",
+            "remotemore.com",
+            "hireology.com",
+            "xwp.co",
+            "upwork.com",
+            "fiverr.com",
+            "freelancer.com",
+            "guru.com",
+            "peopleperhour.com",
+            "turing.com",
+            "arc.dev",
+            "gun.io",
+            "codementor.io",
+            "hired.com",
+            "weworkremotely.com",
+            "remote.com",
+            "outsourcely.com",
+            "flexjobs.com",
+            "triplebyte.com",
+            "hackerrank.com",
+            "codility.com",
+            "coderpad.io",
         }
 
     def screen(self, company: Company) -> bool:
