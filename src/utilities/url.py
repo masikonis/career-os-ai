@@ -1,53 +1,84 @@
-from typing import Optional
+import socket
+from typing import Optional, Union
 from urllib.parse import urlparse, urlunparse
+
+from src.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_domain(url: str) -> str:
-    """Extract domain from URL."""
-    return urlparse(url).netloc.lower()
+    """Extract and lowercase domain from URL."""
+    parsed = urlparse(url)
+    return parsed.netloc.lower()
 
 
 def normalize_url(url: str, base_url: Optional[str] = None) -> str:
-    """Normalize URL by adding base URL if needed."""
+    """Normalize URL by combining with base URL if relative."""
     if not url:
         return ""
+
     if url.startswith("/") and base_url:
         return f"{base_url.rstrip('/')}{url}"
+
     return url
 
 
 def normalize_domain(url: Optional[str]) -> str:
-    """Normalize URL to consistent format for ID generation.
-
-    Args:
-        url: URL string to normalize
-
-    Returns:
-        Normalized domain (e.g., 'company.com')
+    """
+    Normalize domain to consistent format (e.g., 'company.com').
 
     Examples:
         >>> normalize_domain('https://www.company.co.uk/')
         'company.co.uk'
-        >>> normalize_domain('http://app.company.com')
-        'company.com'
     """
     if not url:
         return ""
 
     try:
-        # Parse URL
-        parsed = urlparse(url if "://" in url else f"https://{url}")
-
-        # Get domain without www and common subdomains
+        # Ensure URL has scheme for proper parsing
+        url_to_parse = url if "://" in url else f"https://{url}"
+        parsed = urlparse(url_to_parse)
         domain = parsed.netloc.lower()
-        if domain.startswith("www."):
-            domain = domain[4:]
 
-        # Handle common subdomains
-        parts = domain.split(".")
-        if len(parts) > 2 and parts[0] in ["app", "web", "portal", "dashboard"]:
-            domain = ".".join(parts[1:])
+        # If the domain is empty or doesn't contain a dot, it's invalid
+        if not domain or "." not in domain:
+            return ""
 
-        return domain
-    except Exception:
+        # Clean domain parts
+        domain = _remove_common_prefixes(domain)
+        return _simplify_domain_structure(domain)
+    except (ValueError, AttributeError) as e:
+        logger.debug(f"Error normalizing domain {url}: {str(e)}")
         return ""
+
+
+def is_domain_reachable(domain: str, timeout: float = 2.0) -> bool:
+    """Check if a domain is resolvable with DNS lookup."""
+    try:
+        clean_domain = domain.replace("www.", "").split(":")[0]
+        socket.gethostbyname(clean_domain)
+        return True
+    except socket.gaierror:
+        return False
+    except socket.timeout:
+        logger.debug(f"Domain resolution timed out: {domain}")
+        return False
+
+
+def _remove_common_prefixes(domain: str) -> str:
+    """Remove common subdomain prefixes like www, app, etc."""
+    prefixes = {"www.", "app.", "web.", "portal.", "dashboard."}
+    return (
+        domain[len(prefix) :]
+        if (prefix := next((p for p in prefixes if domain.startswith(p)), None))
+        else domain
+    )
+
+
+def _simplify_domain_structure(domain: str) -> str:
+    """Simplify domain by removing non-essential subdomains."""
+    parts = domain.split(".")
+    if len(parts) > 2 and parts[0] in {"app", "web", "portal", "dashboard"}:
+        return ".".join(parts[1:])
+    return domain

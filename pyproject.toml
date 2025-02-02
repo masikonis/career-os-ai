@@ -39,6 +39,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 pythonpath = "."
 markers = [
+    "unit: mark a test as an unit test",
     "integration: mark a test as an integration test",
     "smoke: mark a test as a smoke test",
     "slow: marks tests that take longer to run"
