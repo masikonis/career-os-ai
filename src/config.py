@@ -14,7 +14,7 @@ class LLMSettings(BaseModel):
     provider: ProviderType = ProviderType.OPENAI
     basic_model: str = "gpt-4o-mini"
     advanced_model: str = "gpt-4o"
-    reasoning_model: str = "o3-mini"
+    reasoning_model: str = "o1-mini"
     embedding_model: str = "text-embedding-3-small"
 
 
