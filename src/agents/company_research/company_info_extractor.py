@@ -5,6 +5,7 @@ import requests
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import HttpUrl
 
+from src.agents.copywriting.brand_voice_text_editor import BrandVoiceTextEditor
 from src.logger import get_logger
 from src.models.company.company import Company
 from src.models.company.company_description import CompanyDescription
@@ -35,7 +36,10 @@ class CompanyInfoExtractor:
         self.llm = LLMFactory.get_provider()
         self.model_type = model_type
         self.temperature = temperature
-        logger.info("CompanyInfoExtractor initialized with LLM provider")
+        self.brand_voice_editor = BrandVoiceTextEditor()
+        logger.info(
+            "CompanyInfoExtractor initialized with LLM provider and brand voice editor"
+        )
 
     def extract_info(self, source_text: str) -> dict:
         """Extract company information from a given source text"""
@@ -313,8 +317,14 @@ class CompanyInfoExtractor:
                 model_type=self.model_type,
                 temperature=0.5,
             )
-            logger.info(f"Generated summary: {response.description}")
-            return response
+
+            # Use class-wide brand voice editor
+            edited_description = self.brand_voice_editor.edit_text(
+                response.description, context="company profile"
+            )
+
+            logger.info(f"Generated and edited summary: {edited_description}")
+            return CompanyDescription(description=edited_description)
         except Exception as e:
             logger.error(f"Error creating summary: {str(e)}")
             raise

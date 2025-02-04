@@ -3,6 +3,7 @@ import json
 import pytest
 
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
+from src.agents.copywriting.brand_voice_text_editor import BrandVoiceTextEditor
 from src.logger import get_logger
 from src.models.company.company import Company
 from src.models.company.company_description import CompanyDescription
@@ -543,3 +544,19 @@ Overall, SlideSpeak's leadership is focused on creating a supportive work enviro
     except Exception as e:
         logger.error(f"Real data extraction test failed: {e}")
         raise
+
+
+@pytest.mark.smoke
+def test_brand_voice_integration():
+    """Test that brand voice editor is properly integrated."""
+    extractor = CompanyInfoExtractor()
+
+    # Verify brand voice editor is initialized
+    assert hasattr(
+        extractor, "brand_voice_editor"
+    ), "Brand voice editor not initialized"
+    assert isinstance(
+        extractor.brand_voice_editor, BrandVoiceTextEditor
+    ), "Brand voice editor is not of correct type"
+
+    logger.info("Brand voice editor integration test passed")
