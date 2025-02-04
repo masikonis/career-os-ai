@@ -22,6 +22,7 @@ class Job(BaseModel):
     # Basic Job Info
     title: str
     description: str
+    summary: Optional[str] = None
     url: HttpUrl
     location_type: JobLocation
     posted_date: Optional[datetime] = None

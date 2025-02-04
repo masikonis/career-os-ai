@@ -2,6 +2,7 @@ from datetime import datetime
 
 from src.agents.job_discovery.job_ad_extractor import JobAdExtractor
 from src.logger import get_logger
+from src.models.company.company import Company
 from src.models.job.job import Job
 from src.models.job.job_location import JobLocation
 
@@ -22,10 +23,17 @@ def test_extract_details_valid_url():
 
     # Check non-empty values for required fields
     assert content_dict["company"]["company_name"], "Company name should not be empty"
-    # Website URL is now optional, so we don't assert it
     assert content_dict["title"], "Job title should not be empty"
     assert content_dict["description"], "Job description should not be empty"
     assert content_dict["url"], "URL should not be empty"
+
+    # Check summary
+    assert "summary" in content_dict, "Summary field should be present"
+    if content.summary:
+        assert isinstance(content.summary, str), "Summary should be a string"
+        assert len(content.summary) > 0, "Summary should not be empty"
+        logger.info("Job Summary:")
+        logger.info(content.summary)
 
     # Check location type
     assert "location_type" in content_dict, "Location type should be present"
@@ -108,3 +116,39 @@ def test_determine_location_type():
     logger.info(f"Input: {onsite_description.strip()}")
     logger.info(f"Output: {onsite_type.type}")
     assert onsite_type.type == "Onsite", "Should detect onsite work"
+
+
+def test_summary_generation():
+    """Test job summary generation."""
+    extractor = JobAdExtractor()
+
+    # Create a sample job
+    job = Job(
+        company=Company.from_basic_info(company_name="Test Company"),
+        title="Software Engineer",
+        description="""We are looking for a skilled software engineer to join our team. 
+        Responsibilities include developing web applications, writing clean code, and collaborating with cross-functional teams. 
+        Required skills: Python, JavaScript, and experience with React.""",
+        url="https://example.com/job",
+        location_type=JobLocation(type="Remote"),
+    )
+
+    # Generate summary
+    summary = extractor._generate_summary(job)
+
+    # Basic validation
+    assert summary is None or isinstance(
+        summary, str
+    ), "Summary should be a string or None"
+    if summary:
+        assert len(summary) > 0, "Summary should not be empty"
+        assert (
+            "developing web applications" in summary
+        ), "Summary should include key responsibilities"
+        assert "Python" in summary, "Summary should include Python"
+        assert "JavaScript" in summary, "Summary should include JavaScript"
+        assert "Test Company" not in summary, "Summary should exclude company name"
+        assert "Remote" not in summary, "Summary should exclude location type"
+        assert "Software Engineer" not in summary, "Summary should exclude job title"
+
+    logger.info("Summary generation test passed")

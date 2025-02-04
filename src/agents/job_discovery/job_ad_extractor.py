@@ -1,8 +1,10 @@
-from typing import Dict
+from typing import Dict, Optional
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, HttpUrl
 
+from src.agents.copywriting.brand_voice_text_editor import BrandVoiceTextEditor
+from src.cache import CacheManager
 from src.logger import get_logger
 from src.models.company.company import Company
 from src.models.job.job import Job
@@ -26,7 +28,11 @@ class JobAdExtractor:
         self.llm = LLMFactory.get_provider()
         self.model_type = model_type
         self.temperature = temperature
-        logger.info("JobAdExtractor initialized with extractors and LLM provider")
+        self.cache = CacheManager()
+        self.brand_voice_editor = BrandVoiceTextEditor()
+        logger.info(
+            "JobAdExtractor initialized with extractors, LLM provider, and brand voice editor"
+        )
 
     def extract_details(self, job_ad_url: str) -> Job:
         """Extract job details from URL."""
@@ -45,6 +51,11 @@ class JobAdExtractor:
             # Get job details
             job_details = extractor.extract_details(job_ad_url)
 
+            # Generate and cache summary
+            job_details.summary = self._generate_summary(job_details)
+            if job_details.summary:
+                logger.info("Generated job summary:\n" + job_details.summary)
+
             # Only use LLM if the extractor needs location analysis
             if extractor.needs_location_analysis():
                 logger.info(f"Using LLM to determine location type for {domain}")
@@ -58,6 +69,52 @@ class JobAdExtractor:
         except Exception as e:
             logger.error(f"Error extracting details: {str(e)}")
             return self._empty_response(job_ad_url)
+
+    def _generate_summary(self, job: Job) -> Optional[str]:
+        """Generate a concise one-paragraph summary focusing on key responsibilities and required skills."""
+        cache_key = f"job_summary:{job.job_id}"
+
+        # Check cache first
+        if cached_summary := self.cache.get(cache_key):
+            logger.debug("Using cached job summary")
+            return cached_summary
+
+        try:
+            messages = [
+                SystemMessage(
+                    content="""You are an expert at summarizing job postings. Create a concise one-paragraph summary that focuses ONLY on:
+                    - Key responsibilities
+                    - Required skills/qualifications
+                    Exclude all other details like company name, location type, or job title."""
+                ),
+                HumanMessage(
+                    content=f"""Job Description:
+                    {job.description}"""
+                ),
+            ]
+
+            summary = self.llm.generate_response(
+                messages,
+                model_type=self.model_type,
+                temperature=0.3,  # Lower temperature for more consistent results
+            )
+
+            # Edit summary with brand voice
+            edited_summary = self.brand_voice_editor.edit_text(
+                summary, context="job summary"
+            )
+            logger.debug("Edited summary with brand voice")
+
+            # Cache the edited summary
+            self.cache.set(
+                cache_key, edited_summary, expire=86400
+            )  # Cache for 24 hours
+            logger.debug("Generated and cached new job summary")
+            return edited_summary
+
+        except Exception as e:
+            logger.error(f"Error generating job summary: {str(e)}")
+            return None
 
     def _determine_location_type(self, description: str) -> JobLocation:
         """Use LLM to determine the location type from job description."""
