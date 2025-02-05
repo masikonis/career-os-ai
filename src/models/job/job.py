@@ -27,6 +27,9 @@ class Job(BaseModel):
     location_type: JobLocation
     posted_date: Optional[datetime] = None
 
+    # Compensation & Benefits
+    offers_equity: bool = False
+
     @computed_field
     def job_id(self) -> str:
         """Generate unique job ID combining prefix, source and content hash.
