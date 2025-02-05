@@ -56,6 +56,12 @@ class JobAdExtractor:
             if job_details.summary:
                 logger.info("Generated job summary:\n" + job_details.summary)
 
+            # Determine if job offers equity
+            job_details.offers_equity = self._determine_equity_offering(
+                job_details.description
+            )
+            logger.debug(f"Equity offering determined: {job_details.offers_equity}")
+
             # Only use LLM if the extractor needs location analysis
             if extractor.needs_location_analysis():
                 logger.info(f"Using LLM to determine location type for {domain}")
@@ -153,6 +159,37 @@ class JobAdExtractor:
         except Exception as e:
             logger.error(f"Error determining location type: {str(e)}")
             return JobLocation(type="Onsite")  # Default to Onsite
+
+    def _determine_equity_offering(self, description: str) -> bool:
+        """Use LLM to determine if job offers equity."""
+        try:
+            messages = [
+                SystemMessage(
+                    content="""You are an expert at analyzing job descriptions. Determine if the job offers equity compensation.
+                    Look for phrases like:
+                    - "equity compensation"
+                    - "stock options"
+                    - "equity package"
+                    - "ownership stake"
+                    Return True if equity is mentioned, False otherwise."""
+                ),
+                HumanMessage(
+                    content=f"""Job Description:
+                    {description}"""
+                ),
+            ]
+
+            response = self.llm.generate_response(
+                messages,
+                model_type=self.model_type,
+                temperature=0.0,  # Use 0 temperature for consistent boolean results
+            )
+
+            return "true" in response.lower()
+
+        except Exception as e:
+            logger.error(f"Error determining equity offering: {str(e)}")
+            return False
 
     def get_extractor(self, domain: str) -> ExtractorInterface | None:
         """Get extractor for domain."""

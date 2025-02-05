@@ -27,6 +27,13 @@ def test_extract_details_valid_url():
     assert content_dict["description"], "Job description should not be empty"
     assert content_dict["url"], "URL should not be empty"
 
+    # Check equity offering field
+    assert "offers_equity" in content_dict, "Equity offering field should be present"
+    assert isinstance(
+        content.offers_equity, bool
+    ), "Equity offering should be a boolean"
+    logger.info(f"Job offers equity: {content.offers_equity}")
+
     # Check summary
     assert "summary" in content_dict, "Summary field should be present"
     if content.summary:
@@ -152,3 +159,46 @@ def test_summary_generation():
         assert "Software Engineer" not in summary, "Summary should exclude job title"
 
     logger.info("Summary generation test passed")
+
+
+def test_equity_detection():
+    """Test equity offering detection with sample descriptions."""
+    extractor = JobAdExtractor()
+
+    # Test job with equity
+    equity_description = """
+    We offer competitive compensation including:
+    - Salary range: $120k-$150k
+    - Equity package
+    - 401(k) matching
+    """
+    job_with_equity = Job(
+        company=Company.from_basic_info(company_name="Test Company"),
+        title="Software Engineer",
+        description=equity_description,
+        url="https://example.com/job",
+        location_type=JobLocation(type="Remote"),
+    )
+    assert extractor._determine_equity_offering(
+        equity_description
+    ), "Should detect equity offering"
+
+    # Test job without equity
+    no_equity_description = """
+    We offer:
+    - Competitive salary
+    - Health insurance
+    - 401(k) matching
+    """
+    job_without_equity = Job(
+        company=Company.from_basic_info(company_name="Test Company"),
+        title="Software Engineer",
+        description=no_equity_description,
+        url="https://example.com/job",
+        location_type=JobLocation(type="Remote"),
+    )
+    assert not extractor._determine_equity_offering(
+        no_equity_description
+    ), "Should not detect equity offering"
+
+    logger.info("Equity detection tests passed")
