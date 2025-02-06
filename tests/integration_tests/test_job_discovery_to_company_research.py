@@ -3,9 +3,7 @@ from datetime import datetime
 
 import pytest
 
-from src.agents.company_research.company_icp_fit_validator import (
-    CompanyEarlyStageValidator,
-)
+from src.agents.company_research.company_icp_fit_validator import CompanyICPFitValidator
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
 from src.agents.company_research.company_web_researcher import CompanyWebResearcher
 from src.agents.job_discovery.job_ad_extractor import JobAdExtractor
@@ -23,18 +21,19 @@ logger = get_logger(__name__)
 def test_job_discovery_to_company_research():
     """
     Integration test for the complete job discovery and company research pipeline.
+    Implements fail-fast behavior - if any critical step fails, the process halts.
 
     Flow:
     1. Discover job postings using JobAdsScraper
     2. Select and extract detailed info from a random job posting using JobAdExtractor
-    3. Validate if it's an early-stage company using CompanyEarlyStageValidator
+    3. Validate if it's a potential ICP fit using CompanyICPFitValidator
     4. Perform deep company research using CompanyWebResearcher
     5. Extract structured company data using CompanyInfoExtractor
     6. Return fully populated Job and Company models
 
     Success Criteria:
     - Successfully extracts job details
-    - Identifies potential startup
+    - Identifies potential ICP fit
     - Gathers comprehensive company information
     - Returns valid Job and Company model instances
     """
@@ -43,7 +42,11 @@ def test_job_discovery_to_company_research():
         logger.info("Starting job discovery phase...")
         scraper = JobAdsScraper()
         job_urls = scraper.scrape_job_urls()
-        assert len(job_urls) > 0, "No job URLs found"
+        if not job_urls:
+            logger.error("No job URLs found - halting process")
+            return None, None
+
+        logger.info(f"Found {len(job_urls)} job URLs")
 
         # Step 2: Select and Process Job
         job_url = random.choice(job_urls)
@@ -51,33 +54,38 @@ def test_job_discovery_to_company_research():
 
         job_extractor = JobAdExtractor()
         job = job_extractor.extract_details(job_url)
-        assert job is not None, "Failed to extract job details"
+        if not job:
+            logger.error("Failed to extract job details - halting process")
+            return None, None
+
         logger.info(
             f"Extracted job details for: {job.title} at {job.company.company_name}"
         )
 
-        # Step 3: Early Stage Validation
-        validator = CompanyEarlyStageValidator()
-        is_early_stage = validator.validate(
+        # Step 3: ICP Fit Validation
+        validator = CompanyICPFitValidator()
+        is_icp_fit = validator.validate(
             company=job.company, research_data=job.description
         )
-
-        if not is_early_stage:
+        if not is_icp_fit:
             logger.info(
-                f"Company {job.company.company_name} is not early-stage (Series A or beyond). Skipping detailed research."
+                f"Company {job.company.company_name} does not fit ICP criteria. Halting process."
             )
             return None, None
 
         logger.info(
-            f"Company {job.company.company_name} appears to be early-stage. Proceeding with detailed research."
+            f"Company {job.company.company_name} appears to fit ICP criteria. Proceeding with detailed research."
         )
 
         # Step 4: Company Research
         logger.info(
-            f"Starting detailed research for startup: {job.company.company_name}"
+            f"Starting detailed research for company: {job.company.company_name}"
         )
         researcher = CompanyWebResearcher()
         research_result = researcher.research_company(job.company)
+        if not research_result:
+            logger.error("Company research failed - halting process")
+            return None, None
 
         # Step 5: Extract Structured Company Data
         info_extractor = CompanyInfoExtractor()
@@ -85,6 +93,9 @@ def test_job_discovery_to_company_research():
             research_output={"comprehensive_summary": research_result},
             company_url=job.company.website_url,
         )
+        if not company_info:
+            logger.error("Failed to extract company info - halting process")
+            return None, None
 
         # Step 6: Create Final Company Model
         company = Company(
@@ -103,19 +114,23 @@ def test_job_discovery_to_company_research():
         job.company = company
 
         # Validate Final Results
-        assert job is not None, "Job should not be None"
-        assert company is not None, "Company should not be None"
-        assert job.company == company, "Job company reference mismatch"
-        assert job.job_id, "Job ID not generated"
-        assert job.description, "Job description should not be empty"
-        assert company.description, "Company description should not be empty"
-        assert company.industry is not None, "Company industry should be extracted"
-        assert (
-            company.growth_stage is not None
-        ), "Company growth stage should be determined"
+        if not all(
+            [
+                job is not None,
+                company is not None,
+                job.company == company,
+                job.job_id,
+                job.description,
+                company.description,
+                company.industry is not None,
+                company.growth_stage is not None,
+            ]
+        ):
+            logger.error("Final validation failed - halting process")
+            return None, None
 
         logger.info(
-            f"Successfully processed job {job.job_id} for startup {company.company_name}"
+            f"Successfully processed job {job.job_id} for company {company.company_name}"
         )
 
         return job, company
