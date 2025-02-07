@@ -123,10 +123,20 @@ def test_job_discovery_to_company_research():
             industry=company_info.get("industry"),
             growth_stage=company_info.get("growth_stage"),
             funding=company_info.get("funding"),
+            careers_url=job.company.careers_url,
         )
 
         # Update job with enriched company info
-        job.company = company
+        job = Job(
+            company=company,
+            title=job.title,
+            description=job.description,
+            url=job.url,
+            location_type=job.location_type,
+            posted_date=job.posted_date,
+            offers_equity=job.offers_equity,
+            summary=job.summary,
+        )
 
         # Validate Final Results
         if not all(
