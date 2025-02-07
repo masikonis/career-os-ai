@@ -102,12 +102,25 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
     def _extract_company_website(self, soup: BeautifulSoup) -> Optional[str]:
         """Extract company website URL from page."""
         try:
-            if company_card := self._find_company_card(soup):
-                if website_link := company_card.find("a", href=True, target="_blank"):
-                    if website_link.find("i", class_="fa-globe-americas"):
-                        website_url = website_link.get("href")
-                        logger.debug(f"Found company website: {website_url}")
-                        return website_url
+            # Find the company profile link
+            if company_link := soup.find(
+                "a",
+                class_="lis-container__job__sidebar__companyDetails__info__link",
+                href=True,
+            ):
+                company_profile_url = self.BASE_URL + company_link["href"]
+
+                # Fetch the company profile page
+                if company_profile_soup := self._fetch_and_parse(company_profile_url):
+                    if company_card := company_profile_soup.find(
+                        "div", class_="company-card"
+                    ):
+                        if website_link := company_card.find(
+                            "a", href=True, target="_blank"
+                        ):
+                            website_url = website_link.get("href")
+                            logger.debug(f"Found company website: {website_url}")
+                            return website_url
             logger.warning("Company website not found")
             return None
         except Exception as e:
