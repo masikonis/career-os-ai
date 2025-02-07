@@ -39,6 +39,7 @@ class CompanyQuickScreener:
             "hackerrank.com",
             "codility.com",
             "coderpad.io",
+            "clouddevs.com",
         }
 
     def screen(self, company: Company) -> bool:
