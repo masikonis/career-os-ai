@@ -32,6 +32,11 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "html.parser")
 
+            # Validate markup before proceeding
+            if not self._validate_markup(soup):
+                logger.error(f"Markup validation failed for URL: {job_ad_url}")
+                return self._empty_response(job_ad_url)
+
             return Job(
                 company=Company.from_basic_info(
                     company_name=self._extract_company_name(soup),
@@ -173,3 +178,21 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
     def needs_location_analysis(self) -> bool:
         """WWR is remote-only, no need for LLM analysis."""
         return False
+
+    def _validate_markup(self, soup: BeautifulSoup) -> bool:
+        """Validate that the page contains expected elements."""
+        required_selectors = {
+            "company_name": "div.lis-container__job__sidebar__companyDetails h3",
+            "title": "h2.lis-container__header__hero__company-info__title",
+            "description": "div.lis-container__job__content__description",
+            "posted_date": "div.lis-container__job__sidebar__job-about span",
+            "company_profile_link": "a.lis-container__job__sidebar__companyDetails__info__link",
+        }
+
+        for field, selector in required_selectors.items():
+            if not soup.select_one(selector):
+                logger.error(
+                    f"Markup validation failed: Missing {field} element (selector: {selector})"
+                )
+                return False
+        return True
