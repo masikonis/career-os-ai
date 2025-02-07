@@ -5,6 +5,7 @@ import pytest
 
 from src.agents.company_research.company_icp_fit_validator import CompanyICPFitValidator
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
+from src.agents.company_research.company_quick_screener import CompanyQuickScreener
 from src.agents.company_research.company_web_researcher import CompanyWebResearcher
 from src.agents.job_discovery.job_ad_extractor import JobAdExtractor
 from src.agents.job_discovery.job_ads_scraper import JobAdsScraper
@@ -26,10 +27,11 @@ def test_job_discovery_to_company_research():
     Flow:
     1. Discover job postings using JobAdsScraper
     2. Select and extract detailed info from a random job posting using JobAdExtractor
-    3. Validate if it's a potential ICP fit using CompanyICPFitValidator
-    4. Perform deep company research using CompanyWebResearcher
-    5. Extract structured company data using CompanyInfoExtractor
-    6. Return fully populated Job and Company models
+    3. Quick screen the company using CompanyQuickScreener
+    4. Validate if it's a potential ICP fit using CompanyICPFitValidator
+    5. Perform deep company research using CompanyWebResearcher
+    6. Extract structured company data using CompanyInfoExtractor
+    7. Return fully populated Job and Company models
 
     Success Criteria:
     - Successfully extracts job details
@@ -62,7 +64,20 @@ def test_job_discovery_to_company_research():
             f"Extracted job details for: {job.title} at {job.company.company_name}"
         )
 
-        # Step 3: ICP Fit Validation
+        # Step 3: Quick Screen Company
+        logger.info(f"Quick screening company: {job.company.company_name}")
+        screener = CompanyQuickScreener()
+        if not screener.screen(job.company):
+            logger.info(
+                f"Company {job.company.company_name} failed quick screening. Halting process."
+            )
+            return None, None
+
+        logger.info(
+            f"Company {job.company.company_name} passed quick screening. Proceeding with ICP validation."
+        )
+
+        # Step 4: ICP Fit Validation
         validator = CompanyICPFitValidator()
         is_icp_fit = validator.validate(
             company=job.company, research_data=job.description
@@ -77,7 +92,7 @@ def test_job_discovery_to_company_research():
             f"Company {job.company.company_name} appears to fit ICP criteria. Proceeding with detailed research."
         )
 
-        # Step 4: Company Research
+        # Step 5: Company Research
         logger.info(
             f"Starting detailed research for company: {job.company.company_name}"
         )
@@ -87,7 +102,7 @@ def test_job_discovery_to_company_research():
             logger.error("Company research failed - halting process")
             return None, None
 
-        # Step 5: Extract Structured Company Data
+        # Step 6: Extract Structured Company Data
         info_extractor = CompanyInfoExtractor()
         company_info = info_extractor.extract_all_info(
             research_output={"comprehensive_summary": research_result},
@@ -97,7 +112,7 @@ def test_job_discovery_to_company_research():
             logger.error("Failed to extract company info - halting process")
             return None, None
 
-        # Step 6: Create Final Company Model
+        # Step 7: Create Final Company Model
         company = Company(
             company_name=job.company.company_name,
             website_url=job.company.website_url,
