@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 import pytz
@@ -80,14 +80,24 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
 
     def _extract_company_name(self, soup: BeautifulSoup) -> str:
         """Get company name from page."""
-        if company_card := self._find_company_card(soup):
-            company_name_tag = company_card.find("h2")
-            if company_name_tag and (name_link := company_name_tag.find("a")):
-                company_name = name_link.get_text(strip=True)
-                logger.debug(f"Found company name: {company_name}")
-                return sanitize_text(company_name)
-        logger.warning("Company name not found")
-        return ""
+        try:
+            company_details = soup.find(
+                "div", class_="lis-container__job__sidebar__companyDetails"
+            )
+            if company_details:
+                title_div = company_details.find(
+                    "div",
+                    class_="lis-container__job__sidebar__companyDetails__info__title",
+                )
+                if title_div and title_div.h3:
+                    company_name = title_div.h3.get_text(strip=True)
+                    logger.debug(f"Found company name: {company_name}")
+                    return sanitize_text(company_name)
+            logger.warning("Company name not found")
+            return ""
+        except Exception as e:
+            logger.error(f"Error extracting company name: {str(e)}")
+            return ""
 
     def _extract_company_website(self, soup: BeautifulSoup) -> Optional[str]:
         """Extract company website URL from page."""
@@ -106,20 +116,20 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
 
     def _extract_title(self, soup: BeautifulSoup) -> str:
         """Get job title from page."""
-        if title_tag := soup.find("h1"):
+        if title_tag := soup.find(
+            "h2", class_="lis-container__header__hero__company-info__title"
+        ):
             return sanitize_text(title_tag.get_text(strip=True))
         logger.warning("Job title not found")
         return ""
 
     def _extract_description(self, soup: BeautifulSoup) -> str:
         """Get job description from page."""
-        if listing := soup.find("div", class_="listing-container"):
-            sections = self._extract_content_sections(listing)
-            if sections:
-                return preserve_paragraphs("\n\n".join(sections))
-            logger.warning("No content sections found")
-        else:
-            logger.warning("Job listing not found")
+        if description_div := soup.find(
+            "div", class_="lis-container__job__content__description"
+        ):
+            return preserve_paragraphs(description_div.get_text(separator="\n").strip())
+        logger.warning("Job description not found")
         return ""
 
     def _extract_content_sections(self, container: Tag) -> list[str]:
@@ -133,13 +143,14 @@ class WeWorkRemotelyExtractor(ExtractorInterface):
     def _extract_posted_date(self, soup: BeautifulSoup) -> Optional[datetime]:
         """Extract posted date from the job listing."""
         try:
-            if header := soup.find("div", class_="listing-header-container"):
-                if time_tag := header.find("time"):
-                    datetime_str = time_tag.get("datetime")
-                    if datetime_str:
-                        return datetime.fromisoformat(
-                            datetime_str.replace("Z", "+00:00")
-                        )
+            if about_section := soup.find(
+                "div", class_="lis-container__job__sidebar__job-about"
+            ):
+                if posted_tag := about_section.find(
+                    "span", string=lambda x: x and "days ago" in x
+                ):
+                    days_ago = int(posted_tag.get_text(strip=True).split()[0])
+                    return datetime.now(pytz.UTC) - timedelta(days=days_ago)
             logger.warning("Posted date not found")
             return None
         except Exception as e:
