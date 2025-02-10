@@ -18,16 +18,12 @@ class CompanyWebResearcher:
 
     def __init__(
         self,
-        model_type: str = "basic",
-        temperature: float = 0.0,
         num_urls: int = 3,
         max_retries: int = 2,
         concurrency: int = 5,
     ):
         self.llm = LLMFactory.get_provider()
         self.web_search = WebSearchFactory.get_provider()
-        self.model_type = model_type
-        self.temperature = temperature
         self.num_urls = num_urls
         self.max_retries = max_retries
         self.concurrency = concurrency
@@ -237,7 +233,7 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             extracted_info = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages, model_type="basic", temperature=0.0
             )
             return extracted_info
         except Exception as e:
@@ -275,7 +271,7 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             summary = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages, model_type="basic", temperature=0.0
             )
             return summary
         except Exception as e:
@@ -307,7 +303,7 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             comprehensive_summary = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages, model_type="basic", temperature=0.0
             )
             logger.debug("Generated concise comprehensive summary.")
             return comprehensive_summary
@@ -332,7 +328,7 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages, model_type="basic", temperature=0.0
             )
         except Exception as e:
             logger.error(f"Error creating company summary: {str(e)}")
@@ -355,7 +351,7 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages, model_type="basic", temperature=0.0
             )
         except Exception as e:
             logger.error(f"Error creating funding summary: {str(e)}")
@@ -378,7 +374,7 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages, model_type="basic", temperature=0.0
             )
         except Exception as e:
             logger.error(f"Error creating team summary: {str(e)}")
@@ -453,7 +449,7 @@ class CompanyWebResearcher:
             icp_research_data = self.llm.generate_response(
                 messages,
                 model_type="advanced",  # Force advanced model here
-                temperature=self.temperature,
+                temperature=0.0,
             )
 
             logger.info(f"Generated ICP research data for {company_name}:")
