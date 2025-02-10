@@ -45,15 +45,19 @@ class CompanyWebResearcher:
             website_url = str(company.website_url)
             logger.info(f"Starting research for company: {company_name}")
 
-            # Step 1: Scrape the Home Page
+            # Step 1: Scrape the Home Page - Essential step
             home_page_doc = self.scrape_urls_concurrently([website_url])
-            home_page_summary = ""
-            if home_page_doc:
-                home_page_doc = home_page_doc[0]
-                relevant_text = self.extract_relevant_info(
-                    company, home_page_doc.page_content
+            if not home_page_doc:
+                logger.error(
+                    f"Failed to scrape home page for {company_name}. Halting research process."
                 )
-                home_page_summary = self.summarize_text(company, relevant_text)
+                raise ValueError(f"Failed to scrape home page for {company_name}")
+
+            home_page_doc = home_page_doc[0]
+            relevant_text = self.extract_relevant_info(
+                company, home_page_doc.page_content
+            )
+            home_page_summary = self.summarize_text(company, relevant_text)
 
             # Step 2: Multi-purpose search queries
             # "startup" search - covers stage, funding, founding year, founders
