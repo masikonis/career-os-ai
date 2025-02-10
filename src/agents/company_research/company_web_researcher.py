@@ -9,6 +9,7 @@ from src.logger import get_logger
 from src.models.company.company import Company
 from src.services.llm.factory import LLMFactory
 from src.services.web_search.factory import WebSearchFactory
+from src.utilities.url import get_domain
 
 logger = get_logger(__name__)
 
@@ -43,7 +44,8 @@ class CompanyWebResearcher:
         try:
             company_name = company.company_name
             website_url = str(company.website_url)
-            logger.info(f"Starting research for company: {company_name}")
+            domain = get_domain(website_url)
+            logger.info(f"Starting research for company: {company_name}, {domain}")
 
             # Step 1: Scrape the Home Page - Essential step
             home_page_doc = self.scrape_urls_concurrently([website_url])
@@ -61,7 +63,7 @@ class CompanyWebResearcher:
 
             # Step 2: Multi-purpose search queries
             # "startup" search - covers stage, funding, founding year, founders
-            startup_query = f"{company_name} startup"
+            startup_query = f"{company_name} {domain} crunchbase"
             startup_search_results = self.web_search.search(startup_query)[
                 : self.num_urls
             ]
@@ -69,35 +71,35 @@ class CompanyWebResearcher:
                 result["url"] for result in startup_search_results if "url" in result
             ]
 
-            # "product" search - covers business model, revenue model, industry
-            product_query = f"{company_name} product"
-            product_search_results = self.web_search.search(product_query)[
-                : self.num_urls
-            ]
-            product_related_urls = [
-                result["url"] for result in product_search_results if "url" in result
-            ]
+            # # "product" search - covers business model, revenue model, industry
+            # product_query = f"{company_name} product"
+            # product_search_results = self.web_search.search(product_query)[
+            #     : self.num_urls
+            # ]
+            # product_related_urls = [
+            #     result["url"] for result in product_search_results if "url" in result
+            # ]
 
-            # "team" search - covers team size, founders, location
-            team_query = f"{company_name} team"
-            team_search_results = self.web_search.search(team_query)[: self.num_urls]
-            team_related_urls = [
-                result["url"] for result in team_search_results if "url" in result
-            ]
+            # # "team" search - covers team size, founders, location
+            # team_query = f"{company_name} team"
+            # team_search_results = self.web_search.search(team_query)[: self.num_urls]
+            # team_related_urls = [
+            #     result["url"] for result in team_search_results if "url" in result
+            # ]
 
-            # "about" search - covers company description, location, founding info
-            about_query = f"{company_name} about"
-            about_search_results = self.web_search.search(about_query)[: self.num_urls]
-            about_related_urls = [
-                result["url"] for result in about_search_results if "url" in result
-            ]
+            # # "about" search - covers company description, location, founding info
+            # about_query = f"{company_name} about"
+            # about_search_results = self.web_search.search(about_query)[: self.num_urls]
+            # about_related_urls = [
+            #     result["url"] for result in about_search_results if "url" in result
+            # ]
 
             # Aggregate all URLs
             all_related_urls = (
                 startup_related_urls
-                + product_related_urls
-                + team_related_urls
-                + about_related_urls
+                # + product_related_urls
+                # + team_related_urls
+                # + about_related_urls
             )
 
             # Deduplicate URLs
@@ -121,6 +123,9 @@ class CompanyWebResearcher:
             # Summarize each scraped document concurrently
             doc_summaries = self.summarize_documents_concurrently(documents, company)
 
+            # TODO
+            logger.info(f"Doc summaries: {doc_summaries}")
+            raise Exception("Not implemented")
             # Include home page summary if available
             if home_page_summary:
                 doc_summaries.append(home_page_summary)
