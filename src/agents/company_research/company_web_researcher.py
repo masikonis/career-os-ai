@@ -138,7 +138,6 @@ class CompanyWebResearcher:
             )
 
             logger.info("Completed research and summarization.")
-            logger.debug(summaries)
 
             return summaries
         except Exception as e:

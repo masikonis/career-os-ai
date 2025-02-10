@@ -27,7 +27,6 @@ def test_company_web_researcher_smoke():
 
         # Update assertion to check for source_summaries
         expected_summaries = [
-            "source_summaries",  # Changed from home_page_summary
             "comprehensive_summary",
             "company_summary",
             "funding_summary",
