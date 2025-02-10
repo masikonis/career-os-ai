@@ -2,7 +2,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage
 from langchain_community.document_loaders import WebBaseLoader
 
 from src.logger import get_logger
@@ -226,7 +226,7 @@ class CompanyWebResearcher:
                 f"and provide a summary of no more than 500 words.\n\n" + text
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
                         f"You are a helpful assistant that extracts comprehensive content about {company.company_name} "
                         f"(website: {company.website_url}). Be sure to distinguish this company from others with similar names "
@@ -268,7 +268,7 @@ class CompanyWebResearcher:
                 f"(website: {company.website_url}).\n\n{text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
                         f"You are a helpful assistant that summarizes content about a company named {company.company_name} "
                         f"(website: {company.website_url}). Always verify company identity using the website URL when "
@@ -299,7 +299,7 @@ class CompanyWebResearcher:
                 "whichever references are most clearly about the actual company using the website URL as verification."
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
                         "You are an expert at synthesizing information about a specific company. "
                         "You will create a concise overview that stays focused on the correct company."
@@ -329,7 +329,7 @@ class CompanyWebResearcher:
                 f"{combined_text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content="You are an expert at summarizing company business models and offerings."
                 ),
                 HumanMessage(content=prompt),
@@ -354,7 +354,7 @@ class CompanyWebResearcher:
                 f"{combined_text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content="You are an expert at summarizing company funding and financial information."
                 ),
                 HumanMessage(content=prompt),
@@ -379,7 +379,7 @@ class CompanyWebResearcher:
                 f"{combined_text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content="You are an expert at summarizing company team and leadership information."
                 ),
                 HumanMessage(content=prompt),
@@ -449,7 +449,7 @@ class CompanyWebResearcher:
             )
 
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
                         "You are an expert at analyzing early-stage companies and extracting key business model "
                         "information. You carefully evaluate source reliability and clearly distinguish "

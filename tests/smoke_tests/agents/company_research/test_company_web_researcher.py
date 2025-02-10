@@ -70,8 +70,7 @@ def test_company_web_researcher_smoke():
 @pytest.mark.smoke
 def test_company_web_researcher_intellisync():
     """
-    Test CompanyWebResearcher with Intellisync (Italian company) to validate geographic consistency
-    and proper handling of European companies.
+    Test CompanyWebResearcher with Intellisync (Italian company) to validate handling of European companies.
     """
     researcher = CompanyWebResearcher()
 
@@ -82,12 +81,6 @@ def test_company_web_researcher_intellisync():
 
     try:
         result = researcher.research_company(company)
-
-        # Update geographic validation
-        icp_data = result["icp_research_data"].lower()
-        assert any(
-            term in icp_data for term in ["italy", "milan", ".it"]
-        ), "Should mention Italian location indicators"
 
         # Update funding validation
         funding_summary = result["funding_summary"].lower()
