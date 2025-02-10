@@ -36,7 +36,7 @@ def test_company_web_researcher_smoke():
 
         # Update ICP data validation
         icp_data = result["icp_research_data"].lower()
-        required_elements = ["stage", "product type", "revenue split", "team size"]
+        required_elements = ["stage", "platform", "revenue", "team size"]
 
         # Check basic structure
         assert result is not None, "Researcher returned None"
