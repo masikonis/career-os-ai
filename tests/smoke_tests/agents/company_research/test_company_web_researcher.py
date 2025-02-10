@@ -19,7 +19,7 @@ def test_company_web_researcher_smoke():
     # Use from_basic_info to create Company instance
     company = Company.from_basic_info(
         company_name="Generation Genius",
-        website_url=HttpUrl("https://generationgenius.com"),
+        website_url=HttpUrl("https://www.generationgenius.com/"),
     )
 
     try:
