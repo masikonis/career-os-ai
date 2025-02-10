@@ -27,8 +27,15 @@ class CompanyWebResearcher:
         self.num_urls = num_urls
         self.max_retries = max_retries
         self.concurrency = concurrency
+
+        # Define model configurations for different tasks
+        self.model_config = {
+            "summarization": {"model_type": "basic", "temperature": 0.0},
+            "extraction": {"model_type": "basic", "temperature": 0.0},
+            "analysis": {"model_type": "reasoning", "temperature": 1.0},
+        }
         logger.info(
-            "CompanyWebResearcher initialized with LLM, and WebSearch providers"
+            "CompanyWebResearcher initialized with LLM, WebSearch providers and model configurations"
         )
 
     def research_company(self, company: Company) -> dict:
@@ -233,7 +240,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             extracted_info = self.llm.generate_response(
-                messages, model_type="basic", temperature=0.0
+                messages,
+                model_type=self.model_config["extraction"]["model_type"],
+                temperature=self.model_config["extraction"]["temperature"],
             )
             return extracted_info
         except Exception as e:
@@ -271,7 +280,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             summary = self.llm.generate_response(
-                messages, model_type="basic", temperature=0.0
+                messages,
+                model_type=self.model_config["summarization"]["model_type"],
+                temperature=self.model_config["summarization"]["temperature"],
             )
             return summary
         except Exception as e:
@@ -303,7 +314,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             comprehensive_summary = self.llm.generate_response(
-                messages, model_type="basic", temperature=0.0
+                messages,
+                model_type=self.model_config["summarization"]["model_type"],
+                temperature=self.model_config["summarization"]["temperature"],
             )
             logger.debug("Generated concise comprehensive summary.")
             return comprehensive_summary
@@ -328,7 +341,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type="basic", temperature=0.0
+                messages,
+                model_type=self.model_config["summarization"]["model_type"],
+                temperature=self.model_config["summarization"]["temperature"],
             )
         except Exception as e:
             logger.error(f"Error creating company summary: {str(e)}")
@@ -351,7 +366,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type="basic", temperature=0.0
+                messages,
+                model_type=self.model_config["extraction"]["model_type"],
+                temperature=self.model_config["extraction"]["temperature"],
             )
         except Exception as e:
             logger.error(f"Error creating funding summary: {str(e)}")
@@ -374,7 +391,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type="basic", temperature=0.0
+                messages,
+                model_type=self.model_config["extraction"]["model_type"],
+                temperature=self.model_config["extraction"]["temperature"],
             )
         except Exception as e:
             logger.error(f"Error creating team summary: {str(e)}")
@@ -448,8 +467,8 @@ class CompanyWebResearcher:
 
             icp_research_data = self.llm.generate_response(
                 messages,
-                model_type="advanced",  # Force advanced model here
-                temperature=0.0,
+                model_type=self.model_config["analysis"]["model_type"],
+                temperature=self.model_config["analysis"]["temperature"],
             )
 
             logger.info(f"Generated ICP research data for {company_name}:")
