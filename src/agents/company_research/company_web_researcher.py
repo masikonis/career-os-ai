@@ -237,7 +237,7 @@ class CompanyWebResearcher:
     ) -> bool:
         """Validate document relevance using multiple criteria."""
         content = doc.page_content.lower()
-        company_domain = get_domain(company.website_url).lower()
+        company_domain = get_domain(str(company.website_url)).lower()
         company_name = company.company_name.lower()
 
         # 1. Direct domain match in content
@@ -255,7 +255,7 @@ class CompanyWebResearcher:
         Does the following content refer to the same company described in the official home page summary?
 
         Company name: {company.company_name}
-        Official domain: {company.website_url}
+        Official domain: {str(company.website_url)}
 
         Home page summary: {home_page_summary}
 
@@ -288,14 +288,14 @@ class CompanyWebResearcher:
         """
         try:
             prompt = (
-                f"Extract relevant information about {company.company_name} (website: {company.website_url}) "
+                f"Extract relevant information about {company.company_name} (website: {str(company.website_url)}) "
                 f"and provide a summary of no more than 500 words.\n\n" + text
             )
             messages = [
                 HumanMessage(
                     content=(
                         f"You are a helpful assistant that extracts comprehensive content about {company.company_name} "
-                        f"(website: {company.website_url}). Be sure to distinguish this company from others with similar names "
+                        f"(website: {str(company.website_url)}). Be sure to distinguish this company from others with similar names "
                         f"by using the website URL as a key identifier."
                     )
                 ),
@@ -331,13 +331,13 @@ class CompanyWebResearcher:
 
             prompt = (
                 f"Provide a summary of the following information about a company named {company.company_name} "
-                f"(website: {company.website_url}).\n\n{text}"
+                f"(website: {str(company.website_url)}).\n\n{text}"
             )
             messages = [
                 HumanMessage(
                     content=(
                         f"You are a helpful assistant that summarizes content about a company named {company.company_name} "
-                        f"(website: {company.website_url}). Always verify company identity using the website URL when "
+                        f"(website: {str(company.website_url)}). Always verify company identity using the website URL when "
                         "summarizing information."
                     )
                 ),
@@ -361,7 +361,7 @@ class CompanyWebResearcher:
             combined_text = "\n".join(summaries)
             prompt = (
                 f"Review all relevant details from the following summaries about a company named '{company.company_name}' "
-                f"(website: {company.website_url}). If there are mentions of multiple entities with the same name, focus on "
+                f"(website: {str(company.website_url)}). If there are mentions of multiple entities with the same name, focus on "
                 "whichever references are most clearly about the actual company using the website URL as verification."
             )
             messages = [
@@ -389,7 +389,7 @@ class CompanyWebResearcher:
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"From the following summaries about {company.company_name} (website: {company.website_url}), create a "
+                f"From the following summaries about {company.company_name} (website: {str(company.website_url)}), create a "
                 "focused summary about the company's core business, products, and services. Include their main value proposition "
                 "and target market. Keep it factual and concise.\n\n"
                 f"{combined_text}"
@@ -414,7 +414,7 @@ class CompanyWebResearcher:
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"From the following summaries about {company.company_name} (website: {company.website_url}), create a "
+                f"From the following summaries about {company.company_name} (website: {str(company.website_url)}), create a "
                 "focused summary about the company's funding history, including total funding amount, funding rounds, key investors, "
                 "and any relevant financial metrics. Keep it factual and concise.\n\n"
                 f"{combined_text}"
@@ -439,7 +439,7 @@ class CompanyWebResearcher:
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"From the following summaries about {company.company_name} (website: {company.website_url}), create a "
+                f"From the following summaries about {company.company_name} (website: {str(company.website_url)}), create a "
                 "focused summary about the company's team, including founders, key executives, and any relevant background "
                 "information about the leadership. Keep it factual and concise.\n\n"
                 f"{combined_text}"
@@ -470,7 +470,7 @@ class CompanyWebResearcher:
             )
 
             prompt = (
-                f"Based on the following information about {company.company_name} (website: {company.website_url}), create a focused research summary "
+                f"Based on the following information about {company.company_name} (website: {str(company.website_url)}), create a focused research summary "
                 "that MUST follow this EXACT format:\n\n"
                 f"{company.company_name} business details:\n"
                 "- [Stage] stage, [Verified Funding Status]\n"
