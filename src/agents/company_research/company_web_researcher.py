@@ -32,6 +32,7 @@ class CompanyWebResearcher:
         # Define model configurations for different tasks
         self.model_config = {
             "summarization": {"model_type": "basic", "temperature": 0.0},
+            "validation": {"model_type": "basic", "temperature": 0.0},
             "extraction": {"model_type": "basic", "temperature": 0.0},
             "analysis": {"model_type": "reasoning", "temperature": 1.0},
         }
@@ -63,7 +64,7 @@ class CompanyWebResearcher:
 
             # Step 2: Multi-purpose search queries
             # "startup" search - covers stage, funding, founding year, founders
-            startup_query = f"{company_name} {domain} crunchbase"
+            startup_query = f"{company_name} startup"
             startup_search_results = self.web_search.search(startup_query)[
                 : self.num_urls
             ]
@@ -71,35 +72,35 @@ class CompanyWebResearcher:
                 result["url"] for result in startup_search_results if "url" in result
             ]
 
-            # # "product" search - covers business model, revenue model, industry
-            # product_query = f"{company_name} product"
-            # product_search_results = self.web_search.search(product_query)[
-            #     : self.num_urls
-            # ]
-            # product_related_urls = [
-            #     result["url"] for result in product_search_results if "url" in result
-            # ]
+            # "product" search - covers business model, revenue model, industry
+            product_query = f"{company_name} product"
+            product_search_results = self.web_search.search(product_query)[
+                : self.num_urls
+            ]
+            product_related_urls = [
+                result["url"] for result in product_search_results if "url" in result
+            ]
 
-            # # "team" search - covers team size, founders, location
-            # team_query = f"{company_name} team"
-            # team_search_results = self.web_search.search(team_query)[: self.num_urls]
-            # team_related_urls = [
-            #     result["url"] for result in team_search_results if "url" in result
-            # ]
+            # "team" search - covers team size, founders, location
+            team_query = f"{company_name} team"
+            team_search_results = self.web_search.search(team_query)[: self.num_urls]
+            team_related_urls = [
+                result["url"] for result in team_search_results if "url" in result
+            ]
 
-            # # "about" search - covers company description, location, founding info
-            # about_query = f"{company_name} about"
-            # about_search_results = self.web_search.search(about_query)[: self.num_urls]
-            # about_related_urls = [
-            #     result["url"] for result in about_search_results if "url" in result
-            # ]
+            # "about" search - covers company description, location, founding info
+            about_query = f"{company_name} about"
+            about_search_results = self.web_search.search(about_query)[: self.num_urls]
+            about_related_urls = [
+                result["url"] for result in about_search_results if "url" in result
+            ]
 
             # Aggregate all URLs
             all_related_urls = (
                 startup_related_urls
-                # + product_related_urls
-                # + team_related_urls
-                # + about_related_urls
+                + product_related_urls
+                + team_related_urls
+                + about_related_urls
             )
 
             # Deduplicate URLs
@@ -121,11 +122,10 @@ class CompanyWebResearcher:
                 return {}
 
             # Summarize each scraped document concurrently
-            doc_summaries = self.summarize_documents_concurrently(documents, company)
+            doc_summaries = self.summarize_documents_concurrently(
+                documents, company, home_page_summary
+            )
 
-            # TODO
-            logger.info(f"Doc summaries: {doc_summaries}")
-            raise Exception("Not implemented")
             # Include home page summary if available
             if home_page_summary:
                 doc_summaries.append(home_page_summary)
@@ -193,7 +193,7 @@ class CompanyWebResearcher:
         return None
 
     def summarize_documents_concurrently(
-        self, documents: list, company: Company
+        self, documents: list, company: Company, home_page_summary: str
     ) -> list:
         """
         Summarize multiple documents in parallel. Extract relevant info for each
@@ -202,7 +202,9 @@ class CompanyWebResearcher:
         summaries = []
         with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
             future_to_doc = {
-                executor.submit(self.process_document, doc, company): doc
+                executor.submit(
+                    self.process_document, doc, company, home_page_summary
+                ): doc
                 for doc in documents
             }
             for future in as_completed(future_to_doc):
@@ -217,12 +219,68 @@ class CompanyWebResearcher:
                     )
         return summaries
 
-    def process_document(self, doc, company: Company) -> str:
+    def process_document(self, doc, company: Company, home_page_summary: str) -> str:
         """
         Extract relevant info from the document and then summarize that info.
         """
+        if not self.validate_document_relevance(doc, company, home_page_summary):
+            logger.debug(
+                f"Skipping irrelevant document from {doc.metadata.get('source')}"
+            )
+            return None
+
         relevant_text = self.extract_relevant_info(company, doc.page_content)
         return self.summarize_text(company, relevant_text)
+
+    def validate_document_relevance(
+        self, doc, company: Company, home_page_summary: str
+    ) -> bool:
+        """Validate document relevance using multiple criteria."""
+        content = doc.page_content.lower()
+        company_domain = get_domain(company.website_url).lower()
+        company_name = company.company_name.lower()
+
+        # 1. Direct domain match in content
+        if company_domain in content:
+            return True
+
+        # 2. Check for linked domain in metadata
+        if "source" in doc.metadata:
+            doc_domain = get_domain(doc.metadata["source"]).lower()
+            if doc_domain == company_domain:
+                return True
+
+        # 3. LLM-powered contextual validation with home page context
+        validation_prompt = f"""
+        Does the following content refer to the same company described in the official home page summary?
+
+        Company name: {company.company_name}
+        Official domain: {company.website_url}
+
+        Home page summary: {home_page_summary}
+
+        Content to verify: {content[:2000]}...
+
+        Answer YES if the content clearly describes the same company (using details like products, leadership, location, or funding); otherwise, answer NO. Please respond only with YES or NO.
+        """
+
+        response = self.llm.generate_response(
+            [HumanMessage(content=validation_prompt)],
+            model_type=self.model_config["validation"]["model_type"],
+            temperature=self.model_config["validation"]["temperature"],
+        )
+
+        # Add confidence threshold
+        if response.strip().upper() not in ["YES", "NO"]:
+            logger.warning(f"Unexpected LLM validation response: {response}")
+            return False  # Fail closed
+
+        # Add validation logging
+        logger.debug(
+            f"Validation result for {doc.metadata.get('source')}: {response.strip()}"
+        )
+
+        return response.strip().upper() == "YES"
 
     def extract_relevant_info(self, company: Company, text: str) -> str:
         """
