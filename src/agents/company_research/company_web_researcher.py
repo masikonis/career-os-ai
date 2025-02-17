@@ -2,13 +2,14 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlparse
 
-from langchain.schema import HumanMessage, SystemMessage
+from langchain.schema import HumanMessage
 from langchain_community.document_loaders import WebBaseLoader
 
 from src.logger import get_logger
 from src.models.company.company import Company
 from src.services.llm.factory import LLMFactory
 from src.services.web_search.factory import WebSearchFactory
+from src.utilities.url import get_domain
 
 logger = get_logger(__name__)
 
@@ -18,21 +19,25 @@ class CompanyWebResearcher:
 
     def __init__(
         self,
-        model_type: str = "basic",
-        temperature: float = 0.0,
         num_urls: int = 3,
         max_retries: int = 2,
         concurrency: int = 5,
     ):
         self.llm = LLMFactory.get_provider()
         self.web_search = WebSearchFactory.get_provider()
-        self.model_type = model_type
-        self.temperature = temperature
         self.num_urls = num_urls
         self.max_retries = max_retries
         self.concurrency = concurrency
+
+        # Define model configurations for different tasks
+        self.model_config = {
+            "summarization": {"model_type": "basic", "temperature": 0.0},
+            "validation": {"model_type": "basic", "temperature": 0.0},
+            "extraction": {"model_type": "basic", "temperature": 0.0},
+            "analysis": {"model_type": "reasoning", "temperature": 1.0},
+        }
         logger.info(
-            "CompanyWebResearcher initialized with LLM, and WebSearch providers"
+            "CompanyWebResearcher initialized with LLM, WebSearch providers and model configurations"
         )
 
     def research_company(self, company: Company) -> dict:
@@ -40,17 +45,24 @@ class CompanyWebResearcher:
         try:
             company_name = company.company_name
             website_url = str(company.website_url)
-            logger.info(f"Starting research for company: {company_name}")
+            domain = get_domain(website_url)
+            logger.info(f"Starting research for company: {company_name}, {domain}")
 
-            # Step 1: Scrape the Home Page
+            # Step 1: Scrape the Home Page - Essential step
             home_page_doc = self.scrape_urls_concurrently([website_url])
-            home_page_summary = ""
-            if home_page_doc:
-                home_page_doc = home_page_doc[0]
-                relevant_text = self.extract_relevant_info(
-                    company_name, home_page_doc.page_content
+            if not home_page_doc:
+                logger.error(
+                    f"Failed to scrape home page for {company_name}. Halting research process."
                 )
-                home_page_summary = self.summarize_text(company_name, relevant_text)
+                raise ValueError(f"Failed to scrape home page for {company_name}")
+
+            home_page_doc = home_page_doc[0]
+            relevant_text = self.extract_relevant_info(
+                company,
+                home_page_doc.page_content,
+                home_page_doc.metadata.get("source", "Unknown source"),
+            )
+            home_page_summary = self.summarize_text(company, relevant_text)
 
             # Step 2: Multi-purpose search queries
             # "startup" search - covers stage, funding, founding year, founders
@@ -113,7 +125,7 @@ class CompanyWebResearcher:
 
             # Summarize each scraped document concurrently
             doc_summaries = self.summarize_documents_concurrently(
-                documents, company_name
+                documents, company, home_page_summary
             )
 
             # Include home page summary if available
@@ -124,24 +136,19 @@ class CompanyWebResearcher:
             summaries = {
                 "home_page_summary": home_page_summary,
                 "comprehensive_summary": self.create_comprehensive_summary(
-                    company_name, doc_summaries
+                    company, doc_summaries
                 ),
-                "company_summary": self.create_company_summary(
-                    company_name, doc_summaries
-                ),
-                "funding_summary": self.create_funding_summary(
-                    company_name, doc_summaries
-                ),
-                "team_summary": self.create_team_summary(company_name, doc_summaries),
+                "company_summary": self.create_company_summary(company, doc_summaries),
+                "funding_summary": self.create_funding_summary(company, doc_summaries),
+                "team_summary": self.create_team_summary(company, doc_summaries),
             }
 
             # Add ICP research data after other summaries are created
             summaries["icp_research_data"] = self.generate_icp_research_data(
-                company_name, summaries
+                company, summaries
             )
 
             logger.info("Completed research and summarization.")
-            logger.debug(summaries)
 
             return summaries
         except Exception as e:
@@ -188,7 +195,7 @@ class CompanyWebResearcher:
         return None
 
     def summarize_documents_concurrently(
-        self, documents: list, company_name: str
+        self, documents: list, company: Company, home_page_summary: str
     ) -> list:
         """
         Summarize multiple documents in parallel. Extract relevant info for each
@@ -197,7 +204,9 @@ class CompanyWebResearcher:
         summaries = []
         with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
             future_to_doc = {
-                executor.submit(self.process_document, doc, company_name): doc
+                executor.submit(
+                    self.process_document, doc, company, home_page_summary
+                ): doc
                 for doc in documents
             }
             for future in as_completed(future_to_doc):
@@ -212,32 +221,103 @@ class CompanyWebResearcher:
                     )
         return summaries
 
-    def process_document(self, doc, company_name: str) -> str:
+    def process_document(self, doc, company: Company, home_page_summary: str) -> str:
         """
         Extract relevant info from the document and then summarize that info.
         """
-        relevant_text = self.extract_relevant_info(company_name, doc.page_content)
-        return self.summarize_text(company_name, relevant_text)
+        if not self.validate_document_relevance(doc, company, home_page_summary):
+            logger.debug(
+                f"Skipping irrelevant document from {doc.metadata.get('source')}"
+            )
+            return None
 
-    def extract_relevant_info(self, company_name: str, text: str) -> str:
+        relevant_text = self.extract_relevant_info(
+            company, doc.page_content, doc.metadata.get("source", "Unknown source")
+        )
+        return self.summarize_text(company, relevant_text)
+
+    def validate_document_relevance(
+        self, doc, company: Company, home_page_summary: str
+    ) -> bool:
+        """Validate document relevance using multiple criteria."""
+        content = doc.page_content.lower()
+        company_domain = get_domain(str(company.website_url)).lower()
+        company_name = company.company_name.lower()
+
+        # 1. Direct domain match in content
+        if company_domain in content:
+            return True
+
+        # 2. Check for linked domain in metadata
+        if "source" in doc.metadata:
+            doc_domain = get_domain(doc.metadata["source"]).lower()
+            if doc_domain == company_domain:
+                return True
+
+        # 3. LLM-powered contextual validation with home page context
+        validation_prompt = f"""
+        Does the following content refer to the same company described in the official home page summary?
+
+        Company name: {company.company_name}
+        Official domain: {str(company.website_url)}
+
+        Home page summary: {home_page_summary}
+
+        Content to verify: {content[:2000]}...
+
+        Answer YES if the content clearly describes the same company (using details like products, leadership, location, or funding); otherwise, answer NO. Please respond only with YES or NO.
+        """
+
+        response = self.llm.generate_response(
+            [HumanMessage(content=validation_prompt)],
+            model_type=self.model_config["validation"]["model_type"],
+            temperature=self.model_config["validation"]["temperature"],
+        )
+
+        # Add confidence threshold
+        if response.strip().upper() not in ["YES", "NO"]:
+            logger.warning(f"Unexpected LLM validation response: {response}")
+            return False  # Fail closed
+
+        # Add validation logging
+        logger.debug(
+            f"Validation result for {doc.metadata.get('source')}: {response.strip()}"
+        )
+
+        return response.strip().upper() == "YES"
+
+    def extract_relevant_info(
+        self, company: Company, text: str, source_url: str
+    ) -> str:
         """
         Extract relevant information about the company from the scraped text.
         """
         try:
             prompt = (
-                f"Extract relevant information about {company_name} and provide a summary of no more than 500 words.\n\n"
-                + text
+                f"Extract relevant information about {company.company_name} (website: {str(company.website_url)}) "
+                f"from the following source: {source_url}\n\n"
+                "For each piece of information you extract, include the source URL in parentheses. Example:\n"
+                "- Raised $5M Series A funding in 2022 (source: https://example.com/news/funding-round)\n"
+                "- Founded in 2018 by John Doe and Jane Smith (source: https://example.com/about-page)\n\n"
+                f"Content to analyze:\n{text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
-                        f"You are a helpful assistant that extracts comprehensive content about a company named {company_name}."
+                        f"You are a helpful assistant that extracts comprehensive content about {company.company_name} "
+                        f"(website: {str(company.website_url)}). For each fact you extract, you MUST: \n"
+                        "1. Include the exact source URL in parentheses after the fact\n"
+                        "2. Distinguish this company from others with similar names using the website URL\n"
+                        "3. Preserve numerical data and specific dates\n"
+                        "4. Maintain original context and avoid interpretation"
                     )
                 ),
                 HumanMessage(content=prompt),
             ]
             extracted_info = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type=self.model_config["extraction"]["model_type"],
+                temperature=self.model_config["extraction"]["temperature"],
             )
             return extracted_info
         except Exception as e:
@@ -255,7 +335,7 @@ class CompanyWebResearcher:
                 logger.warning(f"Invalid URL skipped: {url}")
         return valid_urls
 
-    def summarize_text(self, company_name: str, text: str) -> str:
+    def summarize_text(self, company: Company, text: str) -> str:
         """
         Summarize the given text using the language model.
         """
@@ -263,42 +343,42 @@ class CompanyWebResearcher:
             logger.debug(f"Summarizing text excerpt")
 
             prompt = (
-                f"Provide a summary of the following information about a company named {company_name}.\n\n{text}"
-                f"{text}"
+                f"Provide a summary of the following information about a company named {company.company_name} "
+                f"(website: {str(company.website_url)}).\n\n{text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
-                        f"You are a helpful assistant that summarizes content about a company named {company_name}."
+                        f"You are a helpful assistant that summarizes content about a company named {company.company_name} "
+                        f"(website: {str(company.website_url)}). Always verify company identity using the website URL when "
+                        "summarizing information."
                     )
                 ),
                 HumanMessage(content=prompt),
             ]
             summary = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type=self.model_config["summarization"]["model_type"],
+                temperature=self.model_config["summarization"]["temperature"],
             )
             return summary
         except Exception as e:
             logger.error(f"Error summarizing text: {str(e)}")
             raise
 
-    def create_comprehensive_summary(self, company_name: str, summaries: list) -> str:
+    def create_comprehensive_summary(self, company: Company, summaries: list) -> str:
         """
         Create a concise, single-paragraph summary (no more than 250 words) from all individual summaries.
         """
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"Review all relevant details from the following summaries about a company named '{company_name}'. "
-                "If there are mentions of multiple entities with the same name, focus on whichever references "
-                "are most clearly about the actual company. Then, synthesize a single-paragraph description covering key points: "
-                "up to 50% on a general overview (who they are and what they offer), and the remaining 50% on funding information, "
-                "team details, and customer sentiment. Keep your language clear, factual, and cohesive, ensuring other "
-                "unrelated entities with the same name do not confuse the final summary.\n\n"
-                f"{combined_text}"
+                f"Review all relevant details from the following summaries about a company named '{company.company_name}' "
+                f"(website: {str(company.website_url)}). If there are mentions of multiple entities with the same name, focus on "
+                "whichever references are most clearly about the actual company using the website URL as verification."
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
                         "You are an expert at synthesizing information about a specific company. "
                         "You will create a concise overview that stays focused on the correct company."
@@ -307,7 +387,9 @@ class CompanyWebResearcher:
                 HumanMessage(content=prompt),
             ]
             comprehensive_summary = self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type=self.model_config["summarization"]["model_type"],
+                temperature=self.model_config["summarization"]["temperature"],
             )
             logger.debug("Generated concise comprehensive summary.")
             return comprehensive_summary
@@ -315,76 +397,82 @@ class CompanyWebResearcher:
             logger.error(f"Error creating comprehensive summary: {str(e)}")
             raise
 
-    def create_company_summary(self, company_name: str, summaries: list) -> str:
+    def create_company_summary(self, company: Company, summaries: list) -> str:
         """Create a summary focused on company overview, products, and services."""
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"From the following summaries about {company_name}, create a focused summary "
-                "about the company's core business, products, and services. Include their main "
-                "value proposition and target market. Keep it factual and concise.\n\n"
+                f"From the following summaries about {company.company_name} (website: {str(company.website_url)}), create a "
+                "focused summary about the company's core business, products, and services. Include their main value proposition "
+                "and target market. Keep it factual and concise.\n\n"
                 f"{combined_text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content="You are an expert at summarizing company business models and offerings."
                 ),
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type=self.model_config["summarization"]["model_type"],
+                temperature=self.model_config["summarization"]["temperature"],
             )
         except Exception as e:
             logger.error(f"Error creating company summary: {str(e)}")
             raise
 
-    def create_funding_summary(self, company_name: str, summaries: list) -> str:
+    def create_funding_summary(self, company: Company, summaries: list) -> str:
         """Create a summary focused on funding and financial information."""
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"From the following summaries about {company_name}, create a focused summary "
-                "about the company's funding history, including total funding amount, funding rounds, "
-                "key investors, and any relevant financial metrics. Keep it factual and concise.\n\n"
+                f"From the following summaries about {company.company_name} (website: {str(company.website_url)}), create a "
+                "focused summary about the company's funding history, including total funding amount, funding rounds, key investors, "
+                "and any relevant financial metrics. Keep it factual and concise.\n\n"
                 f"{combined_text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content="You are an expert at summarizing company funding and financial information."
                 ),
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type=self.model_config["extraction"]["model_type"],
+                temperature=self.model_config["extraction"]["temperature"],
             )
         except Exception as e:
             logger.error(f"Error creating funding summary: {str(e)}")
             raise
 
-    def create_team_summary(self, company_name: str, summaries: list) -> str:
+    def create_team_summary(self, company: Company, summaries: list) -> str:
         """Create a summary focused on team and leadership information."""
         try:
             combined_text = "\n".join(summaries)
             prompt = (
-                f"From the following summaries about {company_name}, create a focused summary "
-                "about the company's team, including founders, key executives, and any relevant "
-                "background information about the leadership. Keep it factual and concise.\n\n"
+                f"From the following summaries about {company.company_name} (website: {str(company.website_url)}), create a "
+                "focused summary about the company's team, including founders, key executives, and any relevant background "
+                "information about the leadership. Keep it factual and concise.\n\n"
                 f"{combined_text}"
             )
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content="You are an expert at summarizing company team and leadership information."
                 ),
                 HumanMessage(content=prompt),
             ]
             return self.llm.generate_response(
-                messages, model_type=self.model_type, temperature=self.temperature
+                messages,
+                model_type=self.model_config["extraction"]["model_type"],
+                temperature=self.model_config["extraction"]["temperature"],
             )
         except Exception as e:
             logger.error(f"Error creating team summary: {str(e)}")
             raise
 
-    def generate_icp_research_data(self, company_name: str, summaries: dict) -> str:
+    def generate_icp_research_data(self, company: Company, summaries: dict) -> str:
         """Generate ICP-focused research data from existing summaries."""
         try:
             combined_text = (
@@ -395,9 +483,9 @@ class CompanyWebResearcher:
             )
 
             prompt = (
-                f"Based on the following information about {company_name}, create a focused research summary "
+                f"Based on the following information about {company.company_name} (website: {str(company.website_url)}), create a focused research summary "
                 "that MUST follow this EXACT format:\n\n"
-                f"{company_name} business details:\n"
+                f"{company.company_name} business details:\n"
                 "- [Stage] stage, [Verified Funding Status]\n"
                 "- [Product Type] (e.g., SaaS platform, software product)\n"
                 "- Revenue split: [e.g., '100% SaaS product (no services)', '80% product, 20% services']\n"
@@ -420,10 +508,10 @@ class CompanyWebResearcher:
                 "- Team size: 15-20 people (company careers page)\n"
                 "- Product in market since 2022\n"
                 "- Additional metrics: 100+ enterprise clients (verified on case studies)\n\n"
-                f"Now, create a similar summary for {company_name} using this information:\n\n"
+                f"Now, create a similar summary for {company.company_name} using this information:\n\n"
                 f"{combined_text}\n\n"
                 "IMPORTANT:\n"
-                "1. You MUST start with exactly '{company_name} business details:'\n"
+                "1. You MUST start with exactly '{company.company_name} business details:'\n"
                 "2. You MUST use bullet points (-) for each line\n"
                 "3. For ALL metrics and claims:\n"
                 "   - Label source type: (verified: [source]), (reported by: [source]), or (company claimed)\n"
@@ -440,7 +528,7 @@ class CompanyWebResearcher:
             )
 
             messages = [
-                SystemMessage(
+                HumanMessage(
                     content=(
                         "You are an expert at analyzing early-stage companies and extracting key business model "
                         "information. You carefully evaluate source reliability and clearly distinguish "
@@ -452,11 +540,11 @@ class CompanyWebResearcher:
 
             icp_research_data = self.llm.generate_response(
                 messages,
-                model_type="advanced",  # Force advanced model here
-                temperature=self.temperature,
+                model_type=self.model_config["analysis"]["model_type"],
+                temperature=self.model_config["analysis"]["temperature"],
             )
 
-            logger.info(f"Generated ICP research data for {company_name}:")
+            logger.info(f"Generated ICP research data for {company.company_name}:")
             logger.info(icp_research_data)
 
             return icp_research_data
