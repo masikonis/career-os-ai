@@ -54,6 +54,7 @@ def test_company_web_researcher_smoke():
 
         # Check for key ICP information components
         logger.info("ICP Research Data: %s", result["icp_research_data"])
+        logger.info("Comprehensive Summary: %s", result["comprehensive_summary"])
 
         for element in required_elements:
             assert (
@@ -107,6 +108,7 @@ def test_company_web_researcher_intellisync():
 
         # Validate company-specific details
         comp_summary = result["comprehensive_summary"].lower()
+        logger.info("Comprehensive Summary: %s", result["comprehensive_summary"])
         assert "intellisync" in comp_summary, "Should mention company name"
         assert any(
             word in comp_summary for word in ["technology", "tech", "software"]
