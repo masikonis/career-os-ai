@@ -58,7 +58,9 @@ class CompanyWebResearcher:
 
             home_page_doc = home_page_doc[0]
             relevant_text = self.extract_relevant_info(
-                company, home_page_doc.page_content
+                company,
+                home_page_doc.page_content,
+                home_page_doc.metadata.get("source", "Unknown source"),
             )
             home_page_summary = self.summarize_text(company, relevant_text)
 
@@ -229,7 +231,9 @@ class CompanyWebResearcher:
             )
             return None
 
-        relevant_text = self.extract_relevant_info(company, doc.page_content)
+        relevant_text = self.extract_relevant_info(
+            company, doc.page_content, doc.metadata.get("source", "Unknown source")
+        )
         return self.summarize_text(company, relevant_text)
 
     def validate_document_relevance(
@@ -282,21 +286,30 @@ class CompanyWebResearcher:
 
         return response.strip().upper() == "YES"
 
-    def extract_relevant_info(self, company: Company, text: str) -> str:
+    def extract_relevant_info(
+        self, company: Company, text: str, source_url: str
+    ) -> str:
         """
         Extract relevant information about the company from the scraped text.
         """
         try:
             prompt = (
                 f"Extract relevant information about {company.company_name} (website: {str(company.website_url)}) "
-                f"and provide a summary of no more than 500 words.\n\n" + text
+                f"from the following source: {source_url}\n\n"
+                "For each piece of information you extract, include the source URL in parentheses. Example:\n"
+                "- Raised $5M Series A funding in 2022 (source: https://example.com/news/funding-round)\n"
+                "- Founded in 2018 by John Doe and Jane Smith (source: https://example.com/about-page)\n\n"
+                f"Content to analyze:\n{text}"
             )
             messages = [
                 HumanMessage(
                     content=(
                         f"You are a helpful assistant that extracts comprehensive content about {company.company_name} "
-                        f"(website: {str(company.website_url)}). Be sure to distinguish this company from others with similar names "
-                        f"by using the website URL as a key identifier."
+                        f"(website: {str(company.website_url)}). For each fact you extract, you MUST: \n"
+                        "1. Include the exact source URL in parentheses after the fact\n"
+                        "2. Distinguish this company from others with similar names using the website URL\n"
+                        "3. Preserve numerical data and specific dates\n"
+                        "4. Maintain original context and avoid interpretation"
                     )
                 ),
                 HumanMessage(content=prompt),
