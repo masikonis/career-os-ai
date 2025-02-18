@@ -256,16 +256,30 @@ class CompanyWebResearcher:
 
         # 3. LLM-powered contextual validation with home page context
         validation_prompt = f"""
-        Does the following content refer to the same company described in the official home page summary?
+        Compare the following two descriptions of companies and determine if they refer to the same company.
 
-        Company name: {company.company_name}
-        Official domain: {str(company.website_url)}
+        Home Page Summary (Company A):
+        <home_page_summary>
+        {home_page_summary}
+        </home_page_summary>
 
-        Home page summary: {home_page_summary}
+        Content to Verify (Company B):
+        <content>
+        {content[:3000]}...
+        </content>
 
-        Content to verify: {content[:2000]}...
+        Instructions:
+        1. Focus on key identifiers like:
+           - Core products/services
+           - Industry focus
+           - Key achievements
+           - Unique value propositions
+        2. Ignore minor differences in wording or phrasing
+        3. If the content clearly describes the same company as the home page summary, respond with YES
+        4. If the content clearly describes a different company, respond with NO
+        5. If you're unsure, respond with NO
 
-        Answer YES if the content clearly describes the same company (using details like products, leadership, location, or funding); otherwise, answer NO. Please respond only with YES or NO.
+        Answer only with YES or NO.
         """
 
         response = self.llm.generate_response(
