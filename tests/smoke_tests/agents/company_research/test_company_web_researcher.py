@@ -184,3 +184,100 @@ def test_company_web_researcher_single_grain():
     except Exception as e:
         logger.error(f"Single Grain research test failed: {e}")
         raise
+
+
+@pytest.mark.smoke
+def test_company_web_researcher_glacis():
+    """
+    Test CompanyWebResearcher with Glacis to validate handling of supply chain companies.
+    """
+    researcher = CompanyWebResearcher()
+
+    # Use from_basic_info to create Company instance
+    company = Company.from_basic_info(
+        company_name="Glacis", website_url=HttpUrl("https://glacis.com/")
+    )
+
+    try:
+        result = researcher.research_company(company)
+
+        # Validate summary types
+        expected_summaries = [
+            "comprehensive_summary",
+            "company_summary",
+            "funding_summary",
+            "team_summary",
+            "icp_research_data",
+        ]
+
+        for summary_type in expected_summaries:
+            assert summary_type in result, f"Missing {summary_type} in result"
+            assert isinstance(
+                result[summary_type], str
+            ), f"{summary_type} should be a string"
+            assert (
+                len(result[summary_type].strip()) > 0
+            ), f"{summary_type} should not be empty"
+
+        # Validate company-specific details
+        comp_summary = result["comprehensive_summary"].lower()
+        logger.info("Comprehensive Summary: %s", result["comprehensive_summary"])
+        assert "glacis" in comp_summary, "Should mention company name"
+        assert any(
+            word in comp_summary for word in ["supply chain", "logistics", "automation"]
+        ), "Should mention supply chain/logistics focus"
+
+        logger.info("Glacis research test passed successfully")
+
+    except Exception as e:
+        logger.error(f"Glacis research test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_company_web_researcher_scope():
+    """
+    Test CompanyWebResearcher with Scope to validate handling of inspection software companies.
+    """
+    researcher = CompanyWebResearcher()
+
+    # Use from_basic_info to create Company instance
+    company = Company.from_basic_info(
+        company_name="Scope", website_url=HttpUrl("https://www.getscope.ai/")
+    )
+
+    try:
+        result = researcher.research_company(company)
+
+        # Validate summary types
+        expected_summaries = [
+            "comprehensive_summary",
+            "company_summary",
+            "funding_summary",
+            "team_summary",
+            "icp_research_data",
+        ]
+
+        for summary_type in expected_summaries:
+            assert summary_type in result, f"Missing {summary_type} in result"
+            assert isinstance(
+                result[summary_type], str
+            ), f"{summary_type} should be a string"
+            assert (
+                len(result[summary_type].strip()) > 0
+            ), f"{summary_type} should not be empty"
+
+        # Validate company-specific details
+        comp_summary = result["comprehensive_summary"].lower()
+        logger.info("Comprehensive Summary: %s", result["comprehensive_summary"])
+        assert "scope" in comp_summary, "Should mention company name"
+        assert any(
+            word in comp_summary
+            for word in ["inspection", "software", "ai", "efficiency"]
+        ), "Should mention inspection software and AI focus"
+
+        logger.info("Scope research test passed successfully")
+
+    except Exception as e:
+        logger.error(f"Scope research test failed: {e}")
+        raise
