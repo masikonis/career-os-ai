@@ -158,6 +158,9 @@ class CompanyWebResearcher:
     def scrape_urls_concurrently(self, urls: list) -> list:
         """Scrape multiple URLs concurrently with retry mechanisms."""
         documents = []
+        # Filter out PDF URLs
+        urls = [url for url in urls if not url.endswith(".pdf")]
+        logger.info(f"Filtered out PDF URLs. Remaining URLs to scrape: {len(urls)}")
         with ThreadPoolExecutor(max_workers=self.concurrency) as executor:
             future_to_url = {
                 executor.submit(self.scrape_with_retries, url): url for url in urls
