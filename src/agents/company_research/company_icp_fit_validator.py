@@ -38,6 +38,7 @@ class CompanyICPFitValidator:
           * Limited go-to-market operations
           * Team under 50 people
           * Revenue under $5M ARR
+        - Companies that have been ACQUIRED are automatically UNFIT
 
         You MUST respond 'UNFIT' if the company primarily does ANY of these:
         1. Education/Training Services:
@@ -62,9 +63,11 @@ class CompanyICPFitValidator:
            - Traditional/legacy businesses
            - Pure marketplace without own product
            - Hybrid models where marketplace revenue > 50%
+           - Acquired companies (regardless of previous stage)
            NOTE: Companies are UNFIT if marketplace fees are the primary revenue source
 
         IMPORTANT DISTINCTIONS:
+        - An ACQUIRED company is automatically UNFIT regardless of other factors
         - A company that CREATES tools FOR developers = FIT
         - A company that provides developer SERVICES = UNFIT
         - A company that CREATES educational content/products = FIT
