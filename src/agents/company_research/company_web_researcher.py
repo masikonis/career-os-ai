@@ -313,7 +313,12 @@ class CompanyWebResearcher:
             prompt = (
                 f"Extract relevant information about {company.company_name} (website: {str(company.website_url)}) "
                 f"from the following source: {source_url}\n\n"
-                "For each piece of information you extract, include the source URL in parentheses. Example:\n"
+                "STRICT FORMATTING RULES:\n"
+                "1. Each fact MUST be a bullet point starting with '- '\n"
+                "2. Each fact MUST end with (source: [EXACT_SOURCE_URL])\n"
+                "3. Never combine multiple facts in one bullet point\n"
+                "4. Preserve exact numerical data and dates\n\n"
+                "Example:\n"
                 "- Raised $5M Series A funding in 2022 (source: https://example.com/news/funding-round)\n"
                 "- Founded in 2018 by John Doe and Jane Smith (source: https://example.com/about-page)\n\n"
                 f"Content to analyze:\n{text}"
@@ -336,6 +341,14 @@ class CompanyWebResearcher:
                 model_type=self.model_config["extraction"]["model_type"],
                 temperature=self.model_config["extraction"]["temperature"],
             )
+
+            # Add validation for source inclusion
+            if "(source:" not in extracted_info:
+                logger.warning(
+                    f"Missing source URLs in extracted info from {source_url}"
+                )
+                return f"[Source verification failed] {extracted_info}"
+
             return extracted_info
         except Exception as e:
             logger.error(f"Error extracting relevant information: {str(e)}")
@@ -361,7 +374,12 @@ class CompanyWebResearcher:
 
             prompt = (
                 f"Provide a summary of the following information about a company named {company.company_name} "
-                f"(website: {str(company.website_url)}).\n\n{text}"
+                f"(website: {str(company.website_url)}).\n\n"
+                "STRICT REQUIREMENTS:\n"
+                "1. Every factual claim MUST include its original source URL in parentheses\n"
+                "2. Maintain the exact source URLs from the extracted information\n"
+                "3. Use the format: [factual claim] (source: [EXACT_SOURCE_URL])\n\n"
+                f"{text}"
             )
             messages = [
                 HumanMessage(
@@ -378,6 +396,11 @@ class CompanyWebResearcher:
                 model_type=self.model_config["summarization"]["model_type"],
                 temperature=self.model_config["summarization"]["temperature"],
             )
+
+            # Validate source preservation
+            source_count = summary.count("(source: http")
+            if source_count < 1:
+                logger.warning(f"Summary missing source URLs: {summary[:200]}...")
             return summary
         except Exception as e:
             logger.error(f"Error summarizing text: {str(e)}")
@@ -391,8 +414,13 @@ class CompanyWebResearcher:
             combined_text = "\n".join(summaries)
             prompt = (
                 f"Review all relevant details from the following summaries about a company named '{company.company_name}' "
-                f"(website: {str(company.website_url)}). If there are mentions of multiple entities with the same name, focus on "
-                "whichever references are most clearly about the actual company using the website URL as verification."
+                f"(website: {str(company.website_url)}).\n\n"
+                "STRICT REQUIREMENTS:\n"
+                "1. Create a concise, single-paragraph summary (no more than 250 words)\n"
+                "2. Focus on the most important and verified information\n"
+                "3. Do not include source URLs in the final summary\n"
+                "4. Only include information that has been verified through multiple sources\n\n"
+                f"{combined_text}"
             )
             messages = [
                 HumanMessage(
