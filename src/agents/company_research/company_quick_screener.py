@@ -1,5 +1,7 @@
 from typing import Optional
 
+import requests
+
 from src.logger import get_logger
 from src.models.company.company import Company
 from src.utilities.url import get_domain, is_domain_reachable
@@ -55,11 +57,19 @@ class CompanyQuickScreener:
                 )
                 return False
 
-            # Extract domain from website URL
-            domain = get_domain(str(company.website_url))
+            # Resolve final URL first
+            resolved_url = self.resolve_final_url(str(company.website_url))
+            if not resolved_url:
+                logger.info(
+                    f"Skipping company due to unresolvable URL: {company.website_url}"
+                )
+                return False
+
+            # Extract domain from RESOLVED URL, not original
+            domain = get_domain(resolved_url)
             if not domain:
                 logger.info(
-                    f"Skipping company due to invalid website URL: {company.company_name}"
+                    f"Skipping company due to invalid resolved URL: {resolved_url}"
                 )
                 return False
 
@@ -82,3 +92,12 @@ class CompanyQuickScreener:
         except Exception as e:
             logger.error(f"Error screening company: {str(e)}")
             return False  # Default to False on error
+
+    def resolve_final_url(self, url: str) -> Optional[str]:
+        """Resolve URL redirects to get final destination URL"""
+        try:
+            response = requests.head(url, allow_redirects=True, timeout=5)
+            return response.url
+        except Exception as e:
+            logger.warning(f"Failed to resolve URL {url}: {str(e)}")
+            return None

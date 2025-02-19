@@ -6,6 +6,7 @@ from src.utilities.url import (
     is_domain_reachable,
     normalize_domain,
     normalize_url,
+    resolve_redirects,
 )
 
 logger = get_logger(__name__)
@@ -25,6 +26,10 @@ def test_get_domain():
     # Test invalid URLs
     assert get_domain("not-a-url") == ""
     assert get_domain("") == ""
+
+    # New test cases for redirect handling
+    assert get_domain("https://contra.com/home") == "contra.com"
+    assert get_domain("http://invalid-url") == "invalid-url"
 
 
 @pytest.mark.unit
@@ -96,3 +101,11 @@ def test_simplify_domain_structure():
     # Test essential subdomains
     assert _simplify_domain_structure("sub.example.com") == "sub.example.com"
     assert _simplify_domain_structure("example.com") == "example.com"
+
+
+@pytest.mark.integration
+def test_get_domain_with_real_redirects():
+    """Integration test with real URLs (might be flaky)"""
+    assert get_domain("http://bit.ly/3kLhMdk") == "contra.com"
+    assert get_domain("https://t.co/example") != "t.co"  # Most t.co links redirect
+    assert get_domain("https://non-existent-domain.fake") == "non-existent-domain.fake"
