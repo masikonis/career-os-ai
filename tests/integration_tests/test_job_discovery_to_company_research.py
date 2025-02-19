@@ -158,7 +158,12 @@ def test_job_discovery_to_company_research():
             f"Successfully processed job {job.job_id} for company {company.company_name}"
         )
 
-        assert True  # Replace with actual assertions if necessary
+        # Log final successful state
+        logger.info("Test completed successfully")
+        logger.debug(f"Final Job object: {job}")
+        logger.debug(f"Final Company object: {company}")
+
+        assert True
 
     except Exception as e:
         logger.error(f"Integration test failed: {str(e)}")
