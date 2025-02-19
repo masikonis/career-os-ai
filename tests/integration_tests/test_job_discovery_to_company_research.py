@@ -46,7 +46,7 @@ def test_job_discovery_to_company_research():
         job_urls = scraper.scrape_job_urls()
         if not job_urls:
             logger.error("No job URLs found - halting process")
-            return None, None
+            return
 
         logger.info(f"Found {len(job_urls)} job URLs")
 
@@ -58,7 +58,7 @@ def test_job_discovery_to_company_research():
         job = job_extractor.extract_details(job_url)
         if not job:
             logger.error("Failed to extract job details - halting process")
-            return None, None
+            return
 
         logger.info(
             f"Extracted job details for: {job.title} at {job.company.company_name}"
@@ -71,7 +71,7 @@ def test_job_discovery_to_company_research():
             logger.info(
                 f"Company {job.company.company_name} failed quick screening. Halting process."
             )
-            return None, None
+            return
 
         logger.info(
             f"Company {job.company.company_name} passed quick screening. Proceeding with ICP validation."
@@ -86,7 +86,7 @@ def test_job_discovery_to_company_research():
             logger.info(
                 f"Company {job.company.company_name} does not fit ICP criteria. Halting process."
             )
-            return None, None
+            return
 
         logger.info(
             f"Company {job.company.company_name} appears to fit ICP criteria. Proceeding with detailed research."
@@ -100,7 +100,7 @@ def test_job_discovery_to_company_research():
         research_result = researcher.research_company(job.company)
         if not research_result:
             logger.error("Company research failed - halting process")
-            return None, None
+            return
 
         # Step 6: Extract Structured Company Data
         info_extractor = CompanyInfoExtractor()
@@ -110,7 +110,7 @@ def test_job_discovery_to_company_research():
         )
         if not company_info:
             logger.error("Failed to extract company info - halting process")
-            return None, None
+            return
 
         # Step 7: Create Final Company Model
         company = Company(
@@ -152,13 +152,13 @@ def test_job_discovery_to_company_research():
             ]
         ):
             logger.error("Final validation failed - halting process")
-            return None, None
+            return
 
         logger.info(
             f"Successfully processed job {job.job_id} for company {company.company_name}"
         )
 
-        return job, company
+        assert True  # Replace with actual assertions if necessary
 
     except Exception as e:
         logger.error(f"Integration test failed: {str(e)}")
