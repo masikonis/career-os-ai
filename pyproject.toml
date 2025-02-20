@@ -45,6 +45,8 @@ markers = [
     "smoke: mark a test as a smoke test",
     "slow: marks tests that take longer to run"
 ]
+asyncio_default_fixture_loop_scope = "function"
+addopts = "--asyncio-mode=auto"
 
 [tool.isort]
 profile = "black"

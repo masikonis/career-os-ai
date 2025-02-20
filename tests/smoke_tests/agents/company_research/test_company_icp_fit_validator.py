@@ -14,26 +14,6 @@ def validator():
 
 
 @pytest.mark.smoke
-def test_validate_early_stage_company(validator):
-    """Test validation of an early-stage company"""
-    company = Company.from_basic_info(
-        company_name="Generation Genius",
-        website_url=HttpUrl("https://www.generationgenius.com"),
-    )
-
-    research_data = """
-    Generation Genius is an innovative educational technology company founded in 2017. 
-    The company has raised a total of $1.6 million in funding, including a $1 million 
-    grant from the Howard Hughes Medical Institute. They create and distribute high-quality
-    educational video content for K-12 students. The platform serves approximately 30% 
-    of elementary schools in the U.S.
-    """
-
-    result = validator.validate(company, research_data)
-    assert result is True, "Generation Genius should be identified as fitting ICP"
-
-
-@pytest.mark.smoke
 def test_validate_education_platform(validator):
     """Test validation of education platforms which should not fit ICP"""
     company = Company.from_basic_info(
@@ -118,38 +98,6 @@ def test_validate_later_stage_company(validator):
 
     result = validator.validate(company, research_data)
     assert result is False, "Stripe should be identified as not fitting ICP"
-
-
-@pytest.mark.smoke
-def test_validate_with_research_data(validator):
-    """Test validation using research data"""
-    company = Company.from_basic_info(
-        company_name="Generation Genius",
-        website_url=HttpUrl("https://www.generationgenius.com"),
-    )
-
-    research_data = """
-    Generation Genius is an innovative educational technology company founded in 2017.
-    Key details:
-    - Creates and produces high-quality science video content
-    - Digital platform for K-12 science education
-    - Content creation and distribution platform
-    - $1.6M in total funding ($1M grant + crowdfunding)
-    - Serves 30% of US elementary schools
-    - Pure content product company, not a service provider
-    - Early-stage with seed funding
-    - Focus on content creation and platform development
-    """
-
-    try:
-        result = validator.validate(company, research_data)
-        assert (
-            result is True
-        ), "Generation Genius should be identified as fitting ICP based on research data"
-        logger.info("Research-based validation test passed")
-    except Exception as e:
-        logger.error(f"Research-based validation test failed: {str(e)}")
-        raise
 
 
 @pytest.mark.smoke
@@ -695,4 +643,127 @@ def test_validate_marketplace_saas_hybrid(validator):
         logger.info("SaaS-heavy hybrid validation test passed")
     except Exception as e:
         logger.error(f"SaaS-heavy hybrid validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_intellisync_company(validator):
+    """Test validation of Intellisync company based on provided data"""
+    company = Company.from_basic_info(
+        company_name="Intellisync",
+        website_url=HttpUrl("https://example.com"),
+    )
+
+    research_data = """
+    Intellisync business details:
+    - Early stage, reported funding (company claimed)
+    - AI-powered software solutions (company claimed)
+    - Revenue split: Not publicly disclosed (company claimed)
+    - Team size: Not publicly disclosed (company claimed)
+    - Product available in the market (company claimed)
+    - Additional metrics: No verified user or customer metrics available (company claimed)
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is True
+        ), "Intellisync should be identified as fitting ICP based on provided data"
+        logger.info("Intellisync validation test passed")
+    except Exception as e:
+        logger.error(f"Intellisync validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_glacis_company(validator):
+    """Test validation of Glacis company based on provided data"""
+    company = Company.from_basic_info(
+        company_name="Glacis",
+        website_url=HttpUrl("https://glacis.com/"),
+    )
+
+    research_data = """
+    Glacis business details:
+    - Series A stage, reported funding of $10 million across seed and Series A rounds (company claimed)
+    - AI-driven supply chain management SaaS platform (company claimed)
+    - 100% SaaS product revenue (no services) (company claimed)
+    - Team size: information not available (company claimed)
+    - Product launched and in use (company claimed)
+    - Additional metrics: specific user or customer numbers unverified (company claimed)
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is True
+        ), "Glacis should be identified as fitting ICP based on provided data"
+        logger.info("Glacis validation test passed")
+    except Exception as e:
+        logger.error(f"Glacis validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_scope_company(validator):
+    """Test validation of Scope company based on provided data"""
+    company = Company.from_basic_info(
+        company_name="Scope",
+        website_url=HttpUrl("https://www.getscope.ai/"),
+    )
+
+    research_data = """
+    Scope business details:
+    - Early-stage, reported funding (company claimed) (2024)
+    - AI-native SaaS inspection software platform
+    - Revenue split: Not publicly disclosed
+    - Team size: Not publicly disclosed
+    - Product launched in 2024 (company claimed)
+    - Additional metrics: Clients reduce end-to-end inspection time by an average of 2.2 times and inspectors improve productivity by 40% through system integrations (company claimed, 2024)
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is True
+        ), "Scope should be identified as fitting ICP based on provided data"
+        logger.info("Scope validation test passed")
+    except Exception as e:
+        logger.error(f"Scope validation test failed: {e}")
+        raise
+
+
+@pytest.mark.smoke
+def test_validate_generation_genius_post_acquisition(validator):
+    """Test validation of Generation Genius company based on latest data post-acquisition"""
+    company = Company.from_basic_info(
+        company_name="Generation Genius",
+        website_url=HttpUrl("https://www.generationgenius.com"),
+    )
+
+    research_data = """
+    Generation Genius business details:
+    - Seed stage, reported funding of $1.1 million through equity crowdfunding in June 2019 (reported funding, company claimed)
+    - Educational subscription platform
+    - Revenue split: 100% SaaS product revenue (subscription model) (company claimed)
+    - Team size: 11-50 employees (company website, 2023)
+    - Product launched in 2017, utilized in approximately 30% of elementary schools across the United States (company claimed, 2023)
+    - Additional metrics:
+      - Over 100 educational episodes produced (company claimed, 2023)
+      - 92% of students find videos helpful for learning (research data, company claimed, 2023)
+      - Recognized as #1 education company on the Inc. 500 list in 2022 (verified: Inc. 500)
+      - Included in Time Magazine's TIME100 list of influential companies in 2023 (verified: Time Magazine)
+      - Acquired by Newsela for $100 million in February 2025, primarily in cash and performance-based payments (company claimed)
+    """
+
+    try:
+        result = validator.validate(company, research_data)
+        assert (
+            result is False
+        ), "Acquired company should no longer be considered early-stage and FIT"
+        logger.info(
+            "Post-acquisition validation test passed - correctly identified as UNFIT"
+        )
+    except Exception as e:
+        logger.error(f"Post-acquisition validation test failed: {e}")
         raise

@@ -2,14 +2,35 @@ import socket
 from typing import Optional, Union
 from urllib.parse import urlparse, urlunparse
 
+import requests
+
 from src.logger import get_logger
 
 logger = get_logger(__name__)
 
 
+def resolve_redirects(url: str, timeout: float = 2.0) -> str:
+    """Resolve URL redirects and return final URL."""
+    try:
+        if not url.startswith(("http://", "https://")):
+            logger.debug(f"Skipping redirect resolution for non-HTTP(S) URL: {url}")
+            return url
+
+        logger.debug(f"Resolving redirects for: {url}")
+        response = requests.get(url, allow_redirects=True, timeout=timeout)
+        final_url = response.url
+        if final_url != url:
+            logger.debug(f"Resolved {url} → {final_url}")
+        return final_url
+    except requests.RequestException as e:
+        logger.debug(f"Error resolving redirects for {url}: {str(e)}")
+        return url
+
+
 def get_domain(url: str) -> str:
-    """Extract and lowercase domain from URL."""
-    parsed = urlparse(url)
+    """Extract and lowercase domain from URL after resolving redirects."""
+    resolved_url = resolve_redirects(url)
+    parsed = urlparse(resolved_url)
     return parsed.netloc.lower()
 
 
