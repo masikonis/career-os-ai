@@ -40,6 +40,9 @@ def load_config() -> Dict[str, str]:
     # Load LLM settings
     config["llm"] = LLMSettings()
 
+    # Add Convex config entries
+    config.update({"CONVEX_URL": os.getenv("CONVEX_URL")})
+
     # Restore original env vars if needed
     for key, value in existing_vars.items():
         os.environ[key] = value
