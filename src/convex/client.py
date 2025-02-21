@@ -19,17 +19,12 @@ class ConvexAPIError(Exception):
 
 
 class ConvexClient:
-    def __init__(
-        self, deployment_url: Optional[str] = None, api_key: Optional[str] = None
-    ):
-        self.deployment_url = deployment_url or config.get("CONVEX_DEPLOYMENT_URL")
-        self.api_key = api_key or config.get("CONVEX_API_KEY")
+    def __init__(self, deployment_url: Optional[str] = None):
+        self.deployment_url = deployment_url or config.get("CONVEX_URL")
         self._client = httpx.AsyncClient()
 
-        if not self.deployment_url or not self.api_key:
-            raise ValueError(
-                "Missing Convex configuration - check CONVEX_URL and CONVEX_API_KEY in config"
-            )
+        if not self.deployment_url:
+            raise ValueError("Missing CONVEX_URL in config")
 
     async def __aenter__(self):
         return self
@@ -48,7 +43,6 @@ class ConvexClient:
         """Base request handler with retry logic"""
         url = f"{self.deployment_url}/{action}"
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
 

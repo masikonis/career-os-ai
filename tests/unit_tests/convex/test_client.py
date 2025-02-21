@@ -18,10 +18,7 @@ def mock_httpx_client():
 
 @pytest_asyncio.fixture
 async def convex_client(mock_httpx_client):
-    test_config = {
-        "CONVEX_DEPLOYMENT_URL": "https://test.deployment.convex.cloud",
-        "CONVEX_API_KEY": "test_api_key",
-    }
+    test_config = {"CONVEX_URL": "https://test.deployment.convex.cloud"}
     with patch.dict(config, test_config, clear=True):
         async with ConvexClient() as client:
             yield client
