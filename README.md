@@ -10,6 +10,7 @@ The AI/ML service layer of Career OS, responsible for all intelligent processing
 [![LangSmith](https://img.shields.io/badge/LangSmith-2C8EBB?style=for-the-badge&logo=langchain&logoColor=white)](https://www.langchain.com/langsmith)
 [![LangGraph](https://img.shields.io/badge/LangGraph-2C8EBB?style=for-the-badge&logo=langchain&logoColor=white)](https://www.langchain.com/langgraph)
 [![OpenAI](https://img.shields.io/badge/OpenAI-412991?style=for-the-badge&logo=openai&logoColor=white)](https://openai.com/)
+[![Perplexity](https://img.shields.io/badge/Perplexity-FF6F61?style=for-the-badge&logo=perplexity&logoColor=white)](https://www.perplexity.ai/)
 [![Prefect](https://img.shields.io/badge/Prefect-00A3E0?style=for-the-badge&logo=prefect&logoColor=white)](https://www.prefect.io/)
 [![Modal](https://img.shields.io/badge/Modal-00A3E0?style=for-the-badge&logo=modal&logoColor=white)](https://modal.com/)
 [![Clerk](https://img.shields.io/badge/Clerk-000000?style=for-the-badge&logo=clerk&logoColor=white)](https://clerk.com/)
