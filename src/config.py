@@ -22,7 +22,13 @@ def load_config() -> Dict[str, str]:
     """Load configuration, prioritizing .env file over environment variables"""
     # First, store any existing env vars we want to override
     existing_vars = {}
-    for key in ["OPENAI_API_KEY", "LANGCHAIN_API_KEY", "TAVILY_API_KEY", "USER_AGENT"]:
+    for key in [
+        "OPENAI_API_KEY",
+        "PERPLEXITY_API_KEY",
+        "LANGCHAIN_API_KEY",
+        "TAVILY_API_KEY",
+        "USER_AGENT",
+    ]:
         if key in os.environ:
             existing_vars[key] = os.environ[key]
             del os.environ[key]
@@ -32,6 +38,7 @@ def load_config() -> Dict[str, str]:
     # Create config dictionary with added models
     config = {
         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
+        "PERPLEXITY_API_KEY": os.getenv("PERPLEXITY_API_KEY"),
         "LANGCHAIN_API_KEY": os.getenv("LANGCHAIN_API_KEY"),
         "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
         "USER_AGENT": os.getenv("USER_AGENT"),
