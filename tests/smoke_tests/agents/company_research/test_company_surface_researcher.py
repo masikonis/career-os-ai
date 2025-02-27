@@ -1,7 +1,9 @@
 import pytest
 from pydantic import HttpUrl
 
-from src.agents.company_research.company_web_researcher import CompanyWebResearcher
+from src.agents.company_research.company_surface_researcher import (
+    CompanySurfaceResearcher,
+)
 from src.logger import get_logger
 from src.models.company.company import Company
 
@@ -9,12 +11,12 @@ logger = get_logger(__name__)
 
 
 @pytest.mark.smoke
-def test_company_web_researcher_generation_genius():
+def test_company_surface_researcher_generation_genius():
     """
-    Smoke test for CompanyWebResearcher.
+    Smoke test for CompanySurfaceResearcher.
     Ensures that the researcher can process a basic company info and return summaries.
     """
-    researcher = CompanyWebResearcher()
+    surface_researcher = CompanySurfaceResearcher()
 
     # Use from_basic_info to create Company instance
     company = Company.from_basic_info(
@@ -23,7 +25,7 @@ def test_company_web_researcher_generation_genius():
     )
 
     try:
-        result = researcher.research_company(company)
+        result = surface_researcher.research_company(company)
 
         # Update assertion to check for source_summaries
         expected_summaries = [
@@ -61,19 +63,19 @@ def test_company_web_researcher_generation_genius():
                 element in icp_data
             ), f"ICP research data should contain information about {element}"
 
-        logger.info("CompanyWebResearcher smoke test passed")
+        logger.info("CompanySurfaceResearcher smoke test passed")
 
     except Exception as e:
-        logger.error(f"CompanyWebResearcher smoke test failed: {e}")
+        logger.error(f"CompanySurfaceResearcher smoke test failed: {e}")
         raise
 
 
 @pytest.mark.smoke
-def test_company_web_researcher_intellisync():
+def test_company_surface_researcher_intellisync():
     """
-    Test CompanyWebResearcher with Intellisync (Italian company) to validate handling of European companies.
+    Test CompanySurfaceResearcher with Intellisync (Italian company) to validate handling of European companies.
     """
-    researcher = CompanyWebResearcher()
+    surface_researcher = CompanySurfaceResearcher()
 
     # Use from_basic_info to create Company instance
     company = Company.from_basic_info(
@@ -81,7 +83,7 @@ def test_company_web_researcher_intellisync():
     )
 
     try:
-        result = researcher.research_company(company)
+        result = surface_researcher.research_company(company)
 
         # Update funding validation
         funding_summary = result["funding_summary"].lower()
@@ -122,11 +124,11 @@ def test_company_web_researcher_intellisync():
 
 
 @pytest.mark.smoke
-def test_company_web_researcher_single_grain():
+def test_company_surface_researcher_single_grain():
     """
-    Test CompanyWebResearcher with Single Grain to validate handling of marketing agencies.
+    Test CompanySurfaceResearcher with Single Grain to validate handling of marketing agencies.
     """
-    researcher = CompanyWebResearcher()
+    surface_researcher = CompanySurfaceResearcher()
 
     # Use from_basic_info to create Company instance
     company = Company.from_basic_info(
@@ -135,7 +137,7 @@ def test_company_web_researcher_single_grain():
     )
 
     try:
-        result = researcher.research_company(company)
+        result = surface_researcher.research_company(company)
 
         # Validate summary types
         expected_summaries = [
@@ -187,11 +189,11 @@ def test_company_web_researcher_single_grain():
 
 
 @pytest.mark.smoke
-def test_company_web_researcher_glacis():
+def test_company_surface_researcher_glacis():
     """
-    Test CompanyWebResearcher with Glacis to validate handling of supply chain companies.
+    Test CompanySurfaceResearcher with Glacis to validate handling of supply chain companies.
     """
-    researcher = CompanyWebResearcher()
+    surface_researcher = CompanySurfaceResearcher()
 
     # Use from_basic_info to create Company instance
     company = Company.from_basic_info(
@@ -199,7 +201,7 @@ def test_company_web_researcher_glacis():
     )
 
     try:
-        result = researcher.research_company(company)
+        result = surface_researcher.research_company(company)
 
         # Validate summary types
         expected_summaries = [
@@ -235,11 +237,11 @@ def test_company_web_researcher_glacis():
 
 
 @pytest.mark.smoke
-def test_company_web_researcher_scope():
+def test_company_surface_researcher_scope():
     """
-    Test CompanyWebResearcher with Scope to validate handling of inspection software companies.
+    Test CompanySurfaceResearcher with Scope to validate handling of inspection software companies.
     """
-    researcher = CompanyWebResearcher()
+    surface_researcher = CompanySurfaceResearcher()
 
     # Use from_basic_info to create Company instance
     company = Company.from_basic_info(
@@ -247,7 +249,7 @@ def test_company_web_researcher_scope():
     )
 
     try:
-        result = researcher.research_company(company)
+        result = surface_researcher.research_company(company)
 
         # Validate summary types
         expected_summaries = [
@@ -272,9 +274,8 @@ def test_company_web_researcher_scope():
         logger.info("Comprehensive Summary: %s", result["comprehensive_summary"])
         assert "scope" in comp_summary, "Should mention company name"
         assert any(
-            word in comp_summary
-            for word in ["inspection", "software", "ai", "efficiency"]
-        ), "Should mention inspection software and AI focus"
+            word in comp_summary for word in ["inspection", "software", "ai"]
+        ), "Should mention inspection/software focus"
 
         logger.info("Scope research test passed successfully")
 

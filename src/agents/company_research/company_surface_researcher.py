@@ -14,7 +14,7 @@ from src.utilities.url import get_domain
 logger = get_logger(__name__)
 
 
-class CompanyWebResearcher:
+class CompanySurfaceResearcher:
     """Agent that researches a company by scraping related web pages and summarizing the content."""
 
     def __init__(
@@ -37,7 +37,7 @@ class CompanyWebResearcher:
             "analysis": {"model_type": "reasoning", "temperature": 1.0},
         }
         logger.info(
-            "CompanyWebResearcher initialized with LLM, WebSearch providers and model configurations"
+            "CompanySurfaceResearcher initialized with LLM, WebSearch providers and model configurations"
         )
 
     def research_company(self, company: Company) -> dict:

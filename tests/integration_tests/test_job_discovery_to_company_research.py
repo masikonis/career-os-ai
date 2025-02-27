@@ -6,7 +6,9 @@ import pytest
 from src.agents.company_research.company_icp_fit_validator import CompanyICPFitValidator
 from src.agents.company_research.company_info_extractor import CompanyInfoExtractor
 from src.agents.company_research.company_quick_screener import CompanyQuickScreener
-from src.agents.company_research.company_web_researcher import CompanyWebResearcher
+from src.agents.company_research.company_surface_researcher import (
+    CompanySurfaceResearcher,
+)
 from src.agents.job_discovery.job_ad_extractor import JobAdExtractor
 from src.agents.job_discovery.job_ads_scraper import JobAdsScraper
 from src.logger import get_logger
@@ -29,7 +31,7 @@ def test_job_discovery_to_company_research():
     2. Select and extract detailed info from a random job posting using JobAdExtractor
     3. Quick screen the company using CompanyQuickScreener
     4. Validate if it's a potential ICP fit using CompanyICPFitValidator
-    5. Perform deep company research using CompanyWebResearcher
+    5. Perform deep company research using CompanySurfaceResearcher
     6. Extract structured company data using CompanyInfoExtractor
     7. Return fully populated Job and Company models
 
@@ -96,8 +98,8 @@ def test_job_discovery_to_company_research():
         logger.info(
             f"Starting detailed research for company: {job.company.company_name}"
         )
-        researcher = CompanyWebResearcher()
-        research_result = researcher.research_company(job.company)
+        surface_researcher = CompanySurfaceResearcher()
+        research_result = surface_researcher.research_company(job.company)
         if not research_result:
             logger.error("Company research failed - halting process")
             return

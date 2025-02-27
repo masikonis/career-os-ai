@@ -1,6 +1,8 @@
 from prefect import flow
 
-from src.agents.company_research.company_web_researcher import CompanyWebResearcher
+from src.agents.company_research.company_surface_researcher import (
+    CompanySurfaceResearcher,
+)
 from src.models.company.company import Company
 
 
@@ -11,7 +13,7 @@ class CompanyResearchWorkflow:
         """
         self.company_name = company_name
         self.website_url = website_url
-        self.researcher = CompanyWebResearcher()
+        self.surface_researcher = CompanySurfaceResearcher()
 
     @flow(log_prints=True)
     def company_research(self) -> dict:
@@ -21,7 +23,7 @@ class CompanyResearchWorkflow:
         company = Company.from_basic_info(
             company_name=self.company_name, website_url=self.website_url
         )
-        summary = self.researcher.research_company(company)
+        summary = self.surface_researcher.research_company(company)
         return {
             "message": f"Research completed for {self.company_name}.",
             "summary": summary,
