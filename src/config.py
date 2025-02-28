@@ -26,7 +26,6 @@ def load_config() -> Dict[str, str]:
         "OPENAI_API_KEY",
         "PERPLEXITY_API_KEY",
         "LANGCHAIN_API_KEY",
-        "TAVILY_API_KEY",
         "USER_AGENT",
     ]:
         if key in os.environ:
@@ -40,7 +39,6 @@ def load_config() -> Dict[str, str]:
         "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
         "PERPLEXITY_API_KEY": os.getenv("PERPLEXITY_API_KEY"),
         "LANGCHAIN_API_KEY": os.getenv("LANGCHAIN_API_KEY"),
-        "TAVILY_API_KEY": os.getenv("TAVILY_API_KEY"),
         "USER_AGENT": os.getenv("USER_AGENT"),
     }
 
